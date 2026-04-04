@@ -5,7 +5,7 @@ In C terms, this is like defining a struct that maps directly to a database tabl
 Each instance of User = one row in the "users" table.
 """
 from datetime import datetime
-from sqlalchemy import String, DateTime, Float
+from sqlalchemy import String, DateTime, Float, Boolean
 from sqlalchemy.orm import Mapped, mapped_column
 
 from database import Base
@@ -45,6 +45,27 @@ class User(Base):
     
     # Environmental impact tracking (kg of CO2 saved by buying used)
     carbon_saved: Mapped[float] = mapped_column(Float, default=0.0)
+    
+    # ===== VERIFICATION FIELDS =====
+    # These track whether the user has proven they're a student.
+    # For now we ignore these (allow everyone), but the schema is ready.
+    
+    # Has the user completed verification? (can they fully use the app?)
+    is_verified: Mapped[bool] = mapped_column(Boolean, default=False)
+    
+    # How did they verify? 'email' = clicked link, 'document' = uploaded student ID
+    verification_method: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    
+    # Status of their verification: 'pending', 'approved', 'rejected'
+    # For email: goes straight to 'approved' when they click link
+    # For document: starts 'pending', admin manually approves/rejects
+    verification_status: Mapped[str | None] = mapped_column(String(20), nullable=True)
+    
+    # S3 URL of uploaded student ID image (if verification_method='document')
+    student_id_image_url: Mapped[str | None] = mapped_column(String(500), nullable=True)
+    
+    # When they verified via email (clicked the link)
+    email_verified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     
     # When the account was created
     created_at: Mapped[datetime] = mapped_column(

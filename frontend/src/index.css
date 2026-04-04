@@ -1,0 +1,31 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.apple-shadow {
+  box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+}
+
+.apple-input {
+  border: 1px solid #d2d2d7;
+  transition: all 0.2s ease-in-out;
+}
+
+.apple-input:focus {
+  border-color: #0071e3;
+  box-shadow: 0 0 0 4px rgba(0, 113, 227, 0.1);
+  outline: none;
+}

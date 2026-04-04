@@ -21,9 +21,12 @@ class UserResponse(BaseModel):
     email: EmailStr
     username: str
     university: str
-    avatar_url: str | None  # Can be None if no profile pic
+    avatar_url: str | None
     rating: float
     carbon_saved: float
+    is_verified: bool
+    verification_method: str | None
+    verification_status: str | None
     created_at: datetime
 
     model_config = {"from_attributes": True}
