@@ -1,0 +1,795 @@
+import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { 
+  Heart, 
+  Clock, 
+  Search, 
+  ShoppingCart, 
+  Bell, 
+  ChevronLeft, 
+  ChevronRight, 
+  Book, 
+  Laptop, 
+  Table, 
+  Shirt, 
+  Bike, 
+  Home,
+  ChevronDown, 
+  Plus,
+  Utensils,
+  Trophy, 
+  Gamepad2,
+  Watch,
+  ChevronRight as ChevronRightIcon,
+  Check, 
+  Sparkles,
+  Package,
+  AlertCircle,
+  X,
+  History,
+  Tag,
+  SlidersHorizontal,
+  ChevronUp
+} from 'lucide-react';
+
+/**
+ * CampusSwap - Editorial Marketplace
+ * - Added: Floating "Back to Top" button (FAB) with translucent glass styling.
+ * - Logic: FAB appears only after scrolling 400px down.
+ * - Fixed: Moved static data outside App to prevent reference and rendering errors.
+ * - Logic: Category-aware infinite scroll and shared loading states.
+ */
+
+// --- STATIC DATA CONFIGURATION ---
+
+const mockListings = [
+  { id: '1', title: "Retro Marshall Speaker — Cream", price: "85", seller: { name: "Jordan Kim", avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80" }, image: "https://images.unsplash.com/photo-1545454675-3531b543be5d?q=80&w=800&auto=format&fit=crop", category: "Electronics", condition: "Like New", saved: false, likes: 24 },
+  { id: '2', title: "Vintage Carhartt Jacket — Moss", price: "65", seller: { name: "Maya Patel", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80" }, image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?q=80&w=800&auto=format&fit=crop", category: "Clothing & Shoes", condition: "Good", size: "L", saved: true, likes: 12 },
+  { id: '3', title: "Organic Chemistry 4th Ed. — Klein", price: "42", seller: { name: "Tyler Brooks", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80" }, image: "https://images.unsplash.com/photo-1532012197267-da84d127e765?q=80&w=800&auto=format&fit=crop", category: "Books", condition: "Satisfactory", daysLeft: 2, saved: false, likes: 8 },
+  { id: '4', title: "New Balance 550s — White/Grey", price: "75", seller: { name: "Sofia Reyes", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" }, image: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?q=80&w=800&auto=format&fit=crop", category: "Clothing & Shoes", condition: "Brand New", size: "UK 9", saved: false, likes: 42 }
+];
+
+const categories = [
+  { icon: <Watch size={16}/>, label: 'Accessories' }, { icon: <Book size={16}/>, label: 'Books' },
+  { icon: <Laptop size={16}/>, label: 'Digital Electronics' }, { icon: <Bike size={16}/>, label: 'Bikes' },
+  { icon: <Table size={16}/>, label: 'Furniture & Decor' }, { icon: <Utensils size={16}/>, label: 'Kitchen' },
+  { icon: <Gamepad2 size={16}/>, label: 'Gaming' }, { icon: <Shirt size={16}/>, label: 'Clothing & Shoes' },
+  { icon: <Trophy size={16}/>, label: 'Sports' }, { icon: <Home size={16}/>, label: 'Housing' }
+];
+
+const seasonalSlides = [
+  { tag: "FRESHERS ESSENTIAL", title: "Mini Fridge & Chill", desc: "Keep your snacks cold and room social.", image: "https://images.unsplash.com/photo-1584622650111-993a426fbf0a?q=80&w=800", color: "text-blue-600", bgColor: "bg-blue-50" },
+  { tag: "EXAM SURVIVAL", title: "The All-Nighter Kit", desc: "Desk lamps, textbooks, and focus gear.", image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=800", color: "text-indigo-600", bgColor: "bg-indigo-50" },
+  { tag: "MOVING OUT SALE", title: "Bulk Discounts", desc: "Everything must go before summer break.", image: "https://images.unsplash.com/photo-1600585152220-90363fe7e115?q=80&w=800", color: "text-rose-600", bgColor: "bg-rose-50" }
+];
+
+// --- HELPER COMPONENTS ---
+
+const generateMockData = (count, startOffset = 0, category = null) => {
+  const conditions = ["New", "Like New", "Good", "Used"];
+  return Array.from({ length: count }).map((_, i) => ({
+    id: `item-${startOffset + i}-${category || 'all'}`,
+    title: `${category || 'Campus'} Item ${startOffset + i + 1}`,
+    price: Math.floor(Math.random() * 200) + 10,
+    seller: { name: "Student Seller", avatar: `https://i.pravatar.cc/150?u=${startOffset + i}` },
+    image: `https://picsum.photos/seed/${startOffset + i + (category?.length || 0)}/800/1000`,
+    category: category || "General",
+    condition: conditions[Math.floor(Math.random() * conditions.length)],
+    likes: Math.floor(Math.random() * 50),
+    saved: false
+  }));
+};
+
+const LazyImage = ({ src, alt, className, wrapperClassName = "" }) => {
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isInView, setIsInView] = useState(false);
+  const imgRef = useRef(null);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) { setIsInView(true); observer.unobserve(entry.target); }
+    }, { rootMargin: '200px' });
+    if (imgRef.current) observer.observe(imgRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <div ref={imgRef} className={`relative overflow-hidden bg-zinc-100 ${wrapperClassName}`}>
+      {isInView && (
+        <img src={src} alt={alt} onLoad={() => setIsLoaded(true)}
+          className={`${className} transition-opacity duration-700 ease-out ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+        />
+      )}
+      {!isLoaded && <div className="absolute inset-0 bg-zinc-200 animate-pulse-subtle" />}
+    </div>
+  );
+};
+
+const TypingSubtitle = ({ text }) => {
+  const [displayedText, setDisplayedText] = useState("");
+  useEffect(() => {
+    let i = 0;
+    const interval = setInterval(() => {
+      setDisplayedText(text.slice(0, i)); i++;
+      if (i > text.length) clearInterval(interval);
+    }, 45);
+    return () => clearInterval(interval);
+  }, [text]);
+  return <span>{displayedText}</span>;
+};
+
+const FilterPanel = ({ isOpen, sortBy, setSortBy, priceLimit, setPriceLimit, selectedConditions, setSelectedConditions, selectedSize, setSelectedSize, onApply }) => {
+  const handleConditionToggle = (c) => {
+    if (c === 'any') { setSelectedConditions(['any']); return; }
+    setSelectedConditions(prev => {
+      const filtered = prev.filter(item => item !== 'any');
+      if (filtered.includes(c)) {
+        const next = filtered.filter(item => item !== c);
+        return next.length === 0 ? ['any'] : next;
+      }
+      return [...filtered, c];
+    });
+  };
+
+  return (
+    <div className={`transition-all duration-700 ease-in-out overflow-hidden border-b border-zinc-200/60 ${isOpen ? 'max-h-[800px] opacity-100 pb-12' : 'max-h-0 opacity-0'}`}>
+      <div className="grid grid-cols-1 md:grid-cols-[0.8fr_0.8fr_1fr_1.5fr] gap-x-12 pt-6">
+        <div className="space-y-4">
+          <h4 className="text-sm font-normal text-black font-inter">University / campus</h4>
+          <div className="flex flex-col gap-3 text-zinc-400">
+            <label className="flex items-center gap-3 text-sm font-medium text-zinc-800 hover:text-zinc-900 cursor-pointer transition-colors font-inter">
+              <input defaultChecked type="checkbox" className="rounded-md border-zinc-300 text-black focus:ring-0 w-4 h-4" /> Warwick
+            </label>
+            <div className="text-sm font-medium select-none text-zinc-300 font-inter">Coventry (coming soon)</div>
+            <div className="text-sm font-medium select-none text-zinc-300 font-inter">Birmingham (coming soon)</div>
+          </div>
+        </div>
+        <div className="space-y-4">
+          <h4 className="text-sm font-normal text-black font-inter">Sort by</h4>
+          <div className="flex flex-col gap-2.5">
+            {['Newest', 'Price: Low-High', 'Price: High-Low'].map((option) => (
+              <button key={option} onClick={() => setSortBy(option)} className={`text-left text-sm font-medium transition-colors font-inter ${sortBy === option ? 'text-zinc-900' : 'text-zinc-400 hover:text-zinc-900'}`}>{option}</button>
+            ))}
+          </div>
+        </div>
+        <div className="space-y-4">
+          <h4 className="text-sm font-normal text-black font-inter">Price range</h4>
+          <div className="space-y-2 font-inter">
+            <div className="text-lg font-bold text-zinc-900 tracking-tight">£{priceLimit}</div>
+            <div className="relative">
+              <input type="range" className="w-full accent-black cursor-pointer" min="0" max="600" step="5" value={priceLimit} onChange={(e) => setPriceLimit(e.target.value)} />
+              <div className="flex justify-between mt-1"><span className="text-[10px] text-zinc-400 font-bold font-mono font-mono">£0</span><span className="text-[10px] text-zinc-400 font-bold font-mono font-mono">£600</span></div>
+            </div>
+          </div>
+        </div>
+        <div className="space-y-8 pl-4">
+          <div>
+            <h4 className="text-sm font-normal text-black mb-4 font-inter">Condition</h4>
+            <div className="flex flex-wrap gap-2">
+              {['any', 'new', 'like new', 'good', 'satisfactory', 'used'].map(c => (
+                <button key={c} onClick={() => handleConditionToggle(c)} className={`px-3 py-1.5 rounded-full border text-[11px] font-medium transition-all duration-300 ${selectedConditions.includes(c) ? 'bg-black border-black text-white shadow-none' : 'bg-transparent border-zinc-200 text-zinc-400 hover:text-zinc-900'}`}>{c}</button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <h4 className="text-sm font-normal text-black mb-4 font-inter">Size</h4>
+            <div className="flex flex-wrap gap-2">
+              {['S', 'M', 'L', 'XL', 'OS'].map(s => (
+                <button key={s} onClick={() => setSelectedSize(selectedSize === s ? null : s)} className={`w-8 h-8 rounded-full border flex items-center justify-center text-[10px] font-bold transition-all duration-300 ${selectedSize === s ? 'bg-black border-black text-white shadow-none' : 'bg-transparent border-zinc-200 text-zinc-400 hover:text-zinc-900'}`}>{s}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div className="flex justify-end mt-8">
+        <button onClick={onApply} className="text-blue-600 font-normal text-sm flex items-center gap-0.5 hover:underline transition-all active:scale-95 font-inter">
+          Apply filters <span className="ml-1 text-xs"> {'>'} </span>
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export function ListingCardSkeleton() {
+  return (
+    <div className="w-full animate-pulse-subtle">
+      <div className="relative pb-4">
+        <div className="aspect-[4/5] bg-zinc-200 rounded-2xl w-full" />
+        <div className="absolute bottom-0 left-5 w-14 h-14 rounded-full border-[3px] border-white bg-zinc-200 z-20 shadow-sm" />
+      </div>
+      <div className="mt-1.5 space-y-2.5 px-1">
+        <div className="flex justify-between items-center gap-4">
+          <div className="h-4 bg-zinc-200 rounded-md w-3/5" />
+          <div className="h-4 bg-zinc-200 rounded-md w-10" />
+        </div>
+        <div className="h-3 bg-zinc-100 rounded-md w-2/5" />
+      </div>
+    </div>
+  );
+}
+
+export function ListingCard({ listing, onToggleSave, className = "", index = 0, isMinimal = false }) {
+  const getConditionStyles = (condition) => {
+    const c = condition.toLowerCase();
+    if (c === 'like new') return { bg: 'bg-[#D1E9FF]', text: 'text-[#1B4B8A]' };
+    if (c === 'brand new' || c === 'new') return { bg: 'bg-[#C8F0EF]', text: 'text-[#1A6B6A]' };
+    if (c === 'satisfactory') return { bg: 'bg-[#FFE2C8]', text: 'text-[#8A4A1B]' };
+    return { bg: 'bg-[#E5E7EB]', text: 'text-[#4B5563]' };
+  };
+  const conditionStyle = getConditionStyles(listing.condition);
+
+  return (
+    <div className={`cursor-pointer group reveal-staggered ${className}`} style={{ '--stagger-delay': `${index * 50}ms` }}>
+      <div className="relative pb-4 overflow-visible">
+        <div className="relative overflow-hidden aspect-[4/5] rounded-2xl border border-gray-100 transition-shadow duration-300 group-hover:shadow-2xl group-hover:shadow-black/5">
+          <LazyImage src={listing.image} alt={listing.title} className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110" wrapperClassName="w-full h-full" />
+          <button
+            className={`absolute top-4 right-4 px-3 h-9 rounded-full flex items-center gap-2 z-10 transition-all duration-300 hover:scale-105 active:scale-95 border 
+              ${isMinimal 
+                ? 'bg-white text-zinc-900 border-zinc-200 shadow-none' 
+                : 'bg-white/70 backdrop-blur-md border-white/40 shadow-sm'
+              }`}
+            onClick={(e) => { e.stopPropagation(); onToggleSave?.(listing.id); }}
+          >
+            <span className={`text-[12px] font-bold transition-colors duration-300 ${listing.saved ? 'text-[#FF5A5F]' : 'text-zinc-700'}`}>{listing.likes}</span>
+            <Heart size={17} strokeWidth={2.5} className={`transition-all duration-300 ${listing.saved ? 'fill-[#FF5A5F] text-[#FF5A5F]' : 'text-[#FF5A5F]'}`} />
+          </button>
+          <div className="absolute bottom-4 right-4 flex items-center gap-2 z-10 font-inter">
+            <span className={`px-4 py-1.5 rounded-full text-[11px] font-bold tracking-tight ${isMinimal ? '' : 'shadow-sm'} ${conditionStyle.bg} ${conditionStyle.text}`}>{listing.condition}</span>
+          </div>
+        </div>
+        <div className="absolute bottom-0 left-5 w-14 h-14 rounded-full border-[3px] border-white overflow-hidden bg-gray-100 z-20 shadow-lg group-hover:-translate-y-1 transition-transform duration-300">
+          <img src={listing.seller.avatar} alt={listing.seller.name} className="w-full h-full object-cover" />
+        </div>
+      </div>
+      <div className="mt-1 px-1 transition-transform duration-300 group-hover:translate-x-0.5">
+        <div className="flex items-start justify-between gap-2">
+          <p className="text-[15px] font-bold leading-[1.2] flex-1 line-clamp-1 font-inter">{listing.title}</p>
+          <span className="text-[15px] font-bold font-inter">£{listing.price}</span>
+        </div>
+        <p className="text-[13px] font-semibold text-gray-600 mt-0 font-inter font-inter">{listing.seller.name}</p>
+      </div>
+    </div>
+  );
+}
+
+// --- MAIN APPLICATION ---
+
+const App = () => {
+  const [view, setView] = useState('home'); 
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedQuery, setDebouncedQuery] = useState("");
+  const [recentSearches, setRecentSearches] = useState(["macbook", "vintage jacket", "airpods"]);
+  const [matchingListings, setMatchingListings] = useState([]);
+  const [infiniteListings, setInfiniteListings] = useState([]);
+  const [initialLoading, setInitialLoading] = useState(true);
+  
+  const [categoryListings, setCategoryListings] = useState([]);
+  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [categoryHasMore, setCategoryHasMore] = useState(true);
+  
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [activeCategory, setActiveCategory] = useState(null);
+  const [sortBy, setSortBy] = useState('Newest');
+  const [priceLimit, setPriceLimit] = useState(200);
+  const [selectedConditions, setSelectedConditions] = useState(['any']);
+  const [selectedSize, setSelectedSize] = useState(null);
+  const [currentSlide, setCurrentSlide] = useState(0);
+
+  // FAB State: Back to top button visibility
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  const loaderRef = useRef(null);
+  const essentialsScrollRef = useRef(null);
+
+  // Scroll reset & listener for FAB
+  useEffect(() => { 
+    window.scrollTo(0, 0); 
+    
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 400);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [view, activeCategory]);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Debouncing search
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(searchQuery), 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Search results filter
+  useEffect(() => {
+    if (!debouncedQuery) { setMatchingListings([]); return; }
+    const results = [...mockListings, ...infiniteListings]
+      .filter(item => item.title.toLowerCase().includes(debouncedQuery.toLowerCase()))
+      .slice(0, 12);
+    setMatchingListings(results);
+  }, [debouncedQuery, infiniteListings]);
+
+  // Category selection handler
+  useEffect(() => {
+    if (activeCategory !== null) {
+      setCategoryLoading(true);
+      setCategoryHasMore(true);
+      const catLabel = categories[activeCategory].label;
+      setTimeout(() => {
+        setCategoryListings(generateMockData(12, 0, catLabel));
+        setCategoryLoading(false);
+      }, 800);
+    } else {
+      setCategoryListings([]);
+    }
+  }, [activeCategory]);
+
+  const handleApplyFilters = () => {
+    if (activeCategory !== null) {
+      setCategoryLoading(true);
+      setTimeout(() => setCategoryLoading(false), 600);
+    } else if (view === 'search-results') {
+      const currentMatching = [...matchingListings];
+      setMatchingListings([]);
+      setTimeout(() => setMatchingListings(currentMatching), 500);
+    }
+    setFilterOpen(false);
+  };
+
+  const handleClearFilters = (e) => {
+    e.stopPropagation();
+    setSortBy('Newest');
+    setPriceLimit(200);
+    setSelectedConditions(['any']);
+    setSelectedSize(null);
+    handleApplyFilters();
+  };
+
+  const handleSearchSubmit = (query) => {
+    if (!query) return;
+    setRecentSearches(prev => [query, ...prev.filter(q => q !== query)].slice(0, 5));
+    setIsSearchFocused(false);
+    setView('search-results');
+  };
+
+  const handleToggleSave = (id) => {
+    const updater = prev => prev.map(item => {
+      if (item.id === id) {
+        const isSaving = !item.saved;
+        return { ...item, saved: isSaving, likes: isSaving ? item.likes + 1 : Math.max(0, item.likes - 1) };
+      }
+      return item;
+    });
+    setInfiniteListings(updater);
+    setMatchingListings(updater);
+    setCategoryListings(updater);
+  };
+
+  useEffect(() => {
+    const initFetch = async () => {
+      try {
+        await new Promise(r => setTimeout(r, 1000));
+        setInfiniteListings(generateMockData(20, 0));
+      } finally { setInitialLoading(false); }
+    };
+    initFetch();
+  }, []);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || initialLoading || categoryLoading) return;
+    setLoadingMore(true);
+    await new Promise(r => setTimeout(r, 1200)); 
+    if (activeCategory !== null) {
+      const catLabel = categories[activeCategory].label;
+      const nextBatch = generateMockData(12, categoryListings.length, catLabel);
+      if (categoryListings.length >= 96) setCategoryHasMore(false);
+      else setCategoryListings(prev => [...prev, ...nextBatch]);
+    } else {
+      const nextBatch = generateMockData(20, infiniteListings.length);
+      if (infiniteListings.length >= 80) setHasMore(false);
+      else setInfiniteListings(prev => [...prev, ...nextBatch]);
+    }
+    setLoadingMore(false);
+  }, [loadingMore, initialLoading, categoryLoading, activeCategory, categoryListings.length, infiniteListings.length]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(entries => {
+      const isDiscoveryMore = activeCategory === null && hasMore;
+      const isCategoryMore = activeCategory !== null && categoryHasMore;
+      if (entries[0].isIntersecting && (isDiscoveryMore || isCategoryMore)) {
+        loadMore();
+      }
+    }, { threshold: 0.1 });
+    if (loaderRef.current) observer.observe(loaderRef.current);
+    return () => observer.disconnect();
+  }, [loadMore, hasMore, categoryHasMore, activeCategory, initialLoading, loadingMore, view]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentSlide(p => (p + 1) % 3), 4000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const scrollEssentials = (direction) => {
+    if (essentialsScrollRef.current) {
+      const scrollAmount = essentialsScrollRef.current.offsetWidth * 0.8;
+      essentialsScrollRef.current.scrollBy({ left: direction === 'left' ? -scrollAmount : scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const showEndState = activeCategory !== null ? !categoryHasMore : !hasMore;
+
+  return (
+    <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] selection:bg-blue-100 selection:text-blue-700 font-inter scroll-smooth">
+      {/* Back to Top Floating Button */}
+      <button 
+        onClick={scrollToTop}
+        className={`fixed bottom-10 right-10 w-12 h-12 rounded-full bg-white/70 backdrop-blur-md border border-white/40 shadow-2xl flex items-center justify-center z-40 transition-all duration-500 hover:scale-110 active:scale-90 ${showBackToTop ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-8 pointer-events-none'}`}
+      >
+        <ChevronUp size={24} className="text-zinc-900" />
+      </button>
+
+      {/* Search Dim Overlay */}
+      <div 
+        className={`fixed inset-0 bg-black/40 backdrop-blur-sm z-[45] transition-opacity duration-300 ${isSearchFocused ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
+        onClick={() => setIsSearchFocused(false)}
+      />
+
+      <header className="fixed top-0 w-full z-50 bg-white/85 backdrop-blur-xl border-b border-zinc-200/30">
+        <div className="flex items-center justify-between px-6 py-3 w-full max-w-[1440px] mx-auto relative z-50">
+          <div className="flex items-center gap-8">
+            <a className="text-xl font-black tracking-tighter text-zinc-900 cursor-pointer font-inter font-inter" onClick={() => { setView('home'); setFilterOpen(false); setActiveCategory(null); }}>CS</a>
+            <nav className="hidden md:flex items-center gap-6">
+              <a className={`font-semibold text-sm tracking-tight cursor-pointer font-inter ${view === 'home' && activeCategory === null ? 'text-zinc-900' : 'text-zinc-400'}`} onClick={() => { setView('home'); setFilterOpen(false); setActiveCategory(null); }}>Browse</a>
+              <a className="text-zinc-400 font-medium hover:text-zinc-800 transition-colors text-sm tracking-tight cursor-pointer font-inter">Bundles</a>
+            </nav>
+          </div>
+          
+          <div className="flex-1 max-w-2xl px-8 hidden sm:block relative">
+            <div className="relative group">
+              <Search size={18} className={`absolute left-5 top-1/2 -translate-y-1/2 transition-all ${isSearchFocused ? 'text-blue-600 scale-110' : 'text-zinc-400'}`} />
+              <input 
+                className="w-full h-11 pl-12 pr-4 bg-zinc-100/80 border-none rounded-full text-sm focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-zinc-400 font-inter font-inter" 
+                placeholder="Search campus..." 
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                onFocus={() => setIsSearchFocused(true)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSearchSubmit(searchQuery)}
+              />
+              {searchQuery && (
+                <button onClick={() => setSearchQuery("")} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-900">
+                  <X size={14} strokeWidth={3} />
+                </button>
+              )}
+            </div>
+
+            {/* Search Dropdown */}
+            <div className={`absolute top-full left-8 right-8 mt-4 bg-white rounded-3xl shadow-2xl overflow-hidden transition-all duration-300 transform origin-top ${isSearchFocused ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-4 pointer-events-none'}`}>
+              <div className="max-h-[70vh] overflow-y-auto no-scrollbar py-6">
+                {!searchQuery && recentSearches.length > 0 && (
+                  <div className="px-6 mb-8">
+                    <h3 className="text-[13px] text-zinc-500 mb-4 flex items-center gap-2 font-inter font-inter"><History size={12} /> Recent searches</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {recentSearches.map(q => <button key={q} onClick={() => handleSearchSubmit(q)} className="px-4 py-2 bg-zinc-50 hover:bg-zinc-100 rounded-full text-sm font-medium text-zinc-700 transition-colors font-inter">{q}</button>)}
+                    </div>
+                  </div>
+                )}
+                {searchQuery && (
+                  <div className="px-6 mb-8">
+                    <h3 className="text-[13px] text-zinc-500 mb-4 flex items-center gap-2 font-inter font-inter"><Tag size={12} /> Category suggestions</h3>
+                    <div className="space-y-1">
+                      {categories.slice(0, 3).map(cat => (
+                        <button key={cat.label} onClick={() => handleSearchSubmit(searchQuery)} className="w-full text-left px-4 py-3 rounded-2xl hover:bg-blue-50 group flex items-center justify-between transition-colors">
+                          <span className="text-[15px] text-zinc-800 font-inter font-inter font-inter">Search for "<span className="font-bold text-blue-600">{searchQuery}</span>" in <span className="font-bold">{cat.label}</span></span>
+                          <ChevronRightIcon size={14} className="text-zinc-300 opacity-0 group-hover:opacity-100 -translate-x-2 group-hover:translate-x-0 transition-all"/>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {searchQuery && (
+                  <div className="px-6">
+                    <h3 className="text-[13px] text-zinc-500 mb-4 flex items-center gap-2 font-inter font-inter"><Tag size={12} /> Item matches</h3>
+                    <div className="space-y-2">
+                      {matchingListings.length > 0 ? (
+                        matchingListings.slice(0, 5).map(item => (
+                          <div key={item.id} className="flex items-center gap-4 p-2 rounded-2xl hover:bg-zinc-50 cursor-pointer group transition-colors">
+                            <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-zinc-100">
+                              <img src={item.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-[14px] font-bold text-zinc-900 truncate font-inter font-inter">{item.title}</p>
+                              <p className="text-[12px] text-zinc-500 font-inter font-inter">£{item.price} • {item.condition}</p>
+                            </div>
+                            <ChevronRightIcon size={16} className="text-zinc-300"/>
+                          </div>
+                        ))
+                      ) : <p className="text-sm text-zinc-400 italic px-4 font-inter font-inter">No quick matches for "{searchQuery}"...</p>}
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="bg-zinc-50 px-8 py-4 flex items-center justify-between">
+                <span className="text-[11px] font-bold text-zinc-400 font-inter font-inter">Press enter to see all results</span>
+                <span className="text-[13px] font-semibold text-blue-600 cursor-pointer hover:underline font-inter font-inter" onClick={() => handleSearchSubmit(searchQuery)}>View all results</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-4 text-zinc-500">
+              <button className="hover:text-zinc-900 transition-all"><Bell size={22} strokeWidth={1.5} /></button>
+              <button className="hover:text-zinc-900 transition-all"><ShoppingCart size={22} strokeWidth={1.5} /></button>
+            </div>
+            <button className="bg-blue-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-blue-700 transition-all active:scale-95 ml-2 shadow-sm flex items-center gap-1.5">
+              Sell <Plus size={16} strokeWidth={2.5} />
+            </button>
+            <div className="w-10 h-10 rounded-full overflow-hidden border border-zinc-200 ml-2 cursor-pointer">
+              <img src="https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80" alt="Profile" className="w-full h-full object-cover" />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="pt-16">
+        {view === 'home' ? (
+          <>
+            <div className="relative">
+              <div className="sticky top-16 z-40 bg-white/40 backdrop-blur-md border-b border-zinc-200/40 transition-all duration-300">
+                <div className="max-w-[1440px] mx-auto px-6 py-12 md:py-16">
+                  <h1 className="text-5xl md:text-7xl font-bold tracking-tight text-zinc-900 leading-tight font-inter">
+                    {activeCategory !== null ? (
+                      <>Browsing <span className="text-zinc-400">{categories[activeCategory].label}</span></>
+                    ) : (
+                      <>Marketplace. <span className="text-zinc-400 font-bold"><TypingSubtitle text="Find everything you need for the term." /></span></>
+                    )}
+                  </h1>
+                </div>
+              </div>
+
+              <div className="max-w-[1440px] mx-auto px-6 mt-4 pb-16">
+                <section className="border-b border-zinc-200 pt-6 pb-16">
+                  <div className="flex items-center justify-between mb-4"><span className="text-lg font-semibold text-zinc-900 font-inter font-inter">Categories</span></div>
+                  <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 px-1">
+                    {categories.map((link, idx) => (
+                      <button key={idx} onClick={() => setActiveCategory(activeCategory === idx ? null : idx)} className={`px-7 py-3 rounded-full border text-sm font-medium transition-all duration-300 whitespace-nowrap flex items-center gap-2 active:scale-90 font-inter ${activeCategory === idx ? 'bg-black border-black text-white shadow-none' : 'bg-transparent border-zinc-300 text-zinc-800'}`}>
+                        {link.icon} {link.label}
+                      </button>
+                    ))}
+                  </div>
+                </section>
+
+                <section className={`transition-all duration-500 overflow-hidden ${activeCategory !== null || filterOpen ? 'max-h-[1000px] opacity-100 pt-6' : 'max-h-0 opacity-0'}`}>
+                  <div className="flex items-center justify-between w-full">
+                    <button onClick={() => setFilterOpen(!filterOpen)} className="flex items-center gap-1.5 group font-inter">
+                      <span className="text-lg font-semibold text-zinc-900 group-hover:text-blue-600 transition-colors">Filters</span>
+                      <ChevronDown size={18} className={`text-zinc-500 transition-transform duration-500 ${filterOpen ? 'rotate-180 text-blue-600' : ''}`} />
+                    </button>
+                    <button onClick={handleClearFilters} className="text-blue-600 font-normal text-sm flex items-center gap-0.5 hover:underline transition-all active:scale-95 font-inter">
+                      Clear all <span className="ml-1 text-xs"> {'>'} </span>
+                    </button>
+                  </div>
+                  <FilterPanel 
+                    isOpen={filterOpen} sortBy={sortBy} setSortBy={setSortBy} priceLimit={priceLimit} setPriceLimit={setPriceLimit}
+                    selectedConditions={selectedConditions} setSelectedConditions={setSelectedConditions}
+                    selectedSize={selectedSize} setSelectedSize={setSelectedSize} onApply={handleApplyFilters}
+                  />
+                </section>
+              </div>
+            </div>
+
+            <div className="max-w-[1440px] mx-auto px-6">
+              {activeCategory !== null ? (
+                <section className="py-12 animate-in fade-in slide-in-from-bottom-4 duration-500 min-h-[60vh]">
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-14 md:grid-cols-[repeat(auto-fill,minmax(300px,1fr))] mt-8">
+                    {categoryLoading ? Array.from({ length: 12 }).map((_, i) => <ListingCardSkeleton key={`init-shimmer-${i}`} />) : (
+                      <>
+                        {categoryListings.map((item, idx) => ( <ListingCard key={item.id} listing={item} onToggleSave={handleToggleSave} index={idx % 4} isMinimal={true} /> ))}
+                        {loadingMore && Array.from({ length: 4 }).map((_, i) => <ListingCardSkeleton key={`more-shimmer-${i}`} />)}
+                      </>
+                    )}
+                  </div>
+                </section>
+              ) : (
+                <>
+                  <section className="mb-24 mt-12">
+                    <header className="mb-8"><h2 className="text-2xl tracking-tight font-inter font-inter"><span className="font-bold text-zinc-900">The Latest.</span> <span className="text-zinc-500 font-medium">Fresh arrivals from across campus.</span></h2></header>
+                    <div className="flex flex-col md:flex-row gap-4 pb-8">
+                      <div className="flex-shrink-0 w-full md:w-[64%] aspect-[16/10] rounded-3xl bg-zinc-900 overflow-hidden relative border border-zinc-800 shadow-2xl shadow-black/10 group cursor-pointer">
+                        <LazyImage src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=1200" alt="MacBook" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" wrapperClassName="w-full h-full" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent" />
+                        <div className="absolute bottom-0 p-10 text-white z-10 font-inter">
+                          <span className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-400 mb-2 block font-mono">LATEST DROP</span>
+                          <h3 className="text-3xl font-bold leading-tight">MacBook Air M1</h3>
+                          <p className="text-zinc-100 mt-1 text-base font-medium">Includes original box and charger.</p>
+                          <div className="mt-6"><button className="bg-white text-black px-6 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all hover:bg-zinc-100 active:scale-95 font-inter">View Deal</button></div>
+                        </div>
+                      </div>
+                      <div className="flex-1 flex flex-col gap-4">
+                        <div className="flex-1 aspect-[16/9] rounded-3xl bg-white border border-zinc-200 overflow-hidden relative flex flex-col group shadow-xl shadow-black/5">
+                          {seasonalSlides.map((slide, i) => (
+                            <img key={slide.tag} src={slide.image} className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 ${currentSlide === i ? 'opacity-100 scale-100' : 'opacity-0 scale-110'}`} loading="lazy" />
+                          ))}
+                          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/40 to-transparent z-0" />
+                          <div className="flex-1 p-8 flex flex-row items-center gap-4 relative z-10">
+                            <div className={`w-16 h-16 rounded-2xl ${seasonalSlides[currentSlide].bgColor} flex items-center justify-center border border-white/50 shadow-sm backdrop-blur-sm animate-in zoom-in duration-500`} key={`icon-${currentSlide}`}><Sparkles className={seasonalSlides[currentSlide].color} size={32} /></div>
+                            <div className="text-left flex-1 animate-in slide-in-from-left-4 duration-500" key={`text-${currentSlide}`}>
+                              <span className={`text-[11px] font-black uppercase tracking-[0.3em] mb-1 block font-mono ${seasonalSlides[currentSlide].color}`}>{seasonalSlides[currentSlide].tag}</span>
+                              <h3 className="text-xl font-bold text-zinc-900 leading-tight font-inter"> {seasonalSlides[currentSlide].title}</h3>
+                              <p className="text-zinc-700 font-medium text-[12px] mt-1 font-inter">{seasonalSlides[currentSlide].desc}</p>
+                            </div>
+                          </div>
+                          <div className="absolute bottom-6 left-8 flex gap-1.5 z-10">{seasonalSlides.map((_, i) => (<div key={i} className={`h-1 rounded-full transition-all duration-500 ${currentSlide === i ? 'w-5 bg-zinc-900' : 'w-1.5 bg-zinc-300'}`} />))}</div>
+                        </div>
+                        <div className="flex-1 aspect-[16/9] rounded-3xl bg-[#F0F2FF] border border-blue-100 overflow-hidden relative flex flex-col group cursor-pointer hover:border-blue-300 transition-colors">
+                          <div className="flex-1 p-8 flex flex-row items-center gap-4"><div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center border border-blue-100 shadow-sm transition-transform group-hover:scale-105"><Package className="text-blue-600" size={32} /></div><div className="text-left font-inter"><span className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-700 mb-1 block font-mono">BUNDLE DEAL</span><h3 className="text-xl font-bold text-zinc-900 leading-tight">Dorm Starter Kit</h3><p className="text-blue-700 font-bold text-[12px] mt-1">4 items · £65 · Save 30%</p></div></div>
+                          <div className="px-8 pb-6 flex items-center justify-between"><span className="text-xs font-bold text-zinc-500 font-inter">Limited time university promo</span><button className="text-blue-600 p-1.5 bg-white rounded-full shadow-sm hover:scale-110 transition-transform"><ChevronRightIcon size={20}/></button></div>
+                        </div>
+                      </div>
+                    </div>
+                  </section>
+
+                  <section className="mb-24 group/slider relative">
+                    <div className="flex justify-between items-baseline mb-12">
+                      <h2 className="text-2xl tracking-tight font-inter font-inter"><span className="font-bold text-zinc-900">New semester essentials.</span> <span className="text-zinc-500 font-medium">Set up your perfect study space.</span></h2>
+                      <button className="text-blue-600 font-normal text-sm flex items-center gap-0.5 hover:underline transition-all font-inter">View all <span className="ml-1 text-xs"> {'>'} </span></button>
+                    </div>
+                    <div className="relative">
+                      <button onClick={() => scrollEssentials('left')} className="absolute -left-5 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-white shadow-xl rounded-full flex items-center justify-center border border-zinc-100 opacity-0 group-hover/slider:opacity-100 transition-all hover:bg-zinc-50 hover:scale-110"><ChevronLeft size={20} /></button>
+                      <div ref={essentialsScrollRef} className="flex overflow-x-auto no-scrollbar gap-6 snap-x snap-mandatory px-1 pb-4">
+                        {initialLoading ? (
+                          Array.from({ length: 4 }).map((_, i) => (
+                            <div key={`skeleton-ess-${i}`} className="min-w-[280px] md:min-w-[320px]"><ListingCardSkeleton /></div>
+                          ))
+                        ) : (
+                          infiniteListings.slice(0, 8).map((item, idx) => (
+                            <ListingCard key={`${item.id}-essentials`} listing={item} onToggleSave={handleToggleSave} index={idx} className="min-w-[280px] md:min-w-[320px] snap-start" />
+                          ))
+                        )}
+                      </div>
+                      <button onClick={() => scrollEssentials('right')} className="absolute -right-5 top-1/2 -translate-y-1/2 z-30 w-10 h-10 bg-white shadow-xl rounded-full flex items-center justify-center border border-zinc-100 opacity-0 group-hover/slider:opacity-100 transition-all hover:bg-zinc-50 hover:scale-110"><ChevronRight size={20} /></button>
+                    </div>
+                  </section>
+
+                  <section className="mb-24">
+                    <div className="mb-12"><h2 className="text-2xl tracking-tight font-inter font-inter"><span className="font-bold text-zinc-900">What you might like.</span> <span className="text-zinc-500 font-medium">Curated based on your interests.</span></h2></div>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-14 md:grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
+                      {initialLoading ? Array.from({ length: 12 }).map((_, i) => <ListingCardSkeleton key={`skeleton-grid-${i}`} />) : (
+                        <>
+                          {infiniteListings.map((item, idx) => (<ListingCard key={item.id} listing={item} onToggleSave={handleToggleSave} index={idx % 4} />))}
+                          {loadingMore && Array.from({ length: 4 }).map((_, i) => <ListingCardSkeleton key={`skeleton-more-${i}`} />)}
+                        </>
+                      )}
+                    </div>
+                  </section>
+                </>
+              )}
+              
+              <div ref={loaderRef} className="py-24 flex flex-col items-center justify-center gap-4">
+                {showEndState && !initialLoading && !categoryLoading && (
+                  <div className="flex flex-col items-center gap-3 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+                    <Check className="text-zinc-300" size={24} strokeWidth={1.5} />
+                    <p className="text-[13px] text-zinc-400 font-medium font-inter">You've reached the end</p>
+                  </div>
+                )}
+                {!showEndState && !initialLoading && !categoryLoading && !loadingMore && (
+                  <p className="text-[11px] text-zinc-300 font-bold uppercase tracking-[0.2em] animate-pulse font-mono font-mono">Scroll to discover more</p>
+                )}
+                {loadingMore && (
+                  <p className="text-[11px] text-zinc-300 font-bold uppercase tracking-[0.2em] font-mono font-mono">Loading more items...</p>
+                )}
+              </div>
+            </div>
+          </>
+        ) : (
+          /* Search Results View */
+          <div className="max-w-[1440px] mx-auto px-6 py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <header className="mb-4 flex flex-col gap-6">
+              <div className="pt-8 pb-12">
+                <button onClick={() => { setView('home'); setFilterOpen(false); setActiveCategory(null); }} className="text-[11px] font-black uppercase tracking-widest text-blue-600 mb-6 hover:underline block font-mono font-mono">← Back to home</button>
+                <h2 className="text-5xl md:text-7xl font-bold tracking-tight text-zinc-900 leading-tight font-inter">
+                  Results for <span className="text-zinc-400 font-bold">"{debouncedQuery}"</span>
+                </h2>
+                <p className="mt-4 text-zinc-500 font-medium font-inter pl-1 font-inter">Found {matchingListings.length} items matching your search.</p>
+              </div>
+              
+              <div className="border-b border-zinc-200 pb-2">
+                <div className="flex items-center justify-between w-full">
+                  <button onClick={() => setFilterOpen(!filterOpen)} className="flex items-center gap-2 py-4 group font-inter">
+                    <SlidersHorizontal size={18} className={`${filterOpen ? 'text-blue-600' : 'text-zinc-400'} transition-colors`} />
+                    <span className="text-lg font-semibold text-zinc-900 group-hover:text-blue-600 transition-colors">Filters</span>
+                    <ChevronDown size={18} className={`text-zinc-500 transition-transform duration-500 ${filterOpen ? 'rotate-180 text-blue-600' : ''}`} strokeWidth={1.5} />
+                  </button>
+                  <button onClick={handleClearFilters} className="text-blue-600 font-normal text-sm flex items-center gap-0.5 hover:underline transition-all active:scale-95 font-inter font-inter">
+                    Clear all <span className="ml-1 text-xs"> {'>'} </span>
+                  </button>
+                </div>
+                <FilterPanel isOpen={filterOpen} sortBy={sortBy} setSortBy={setSortBy} priceLimit={priceLimit} setPriceLimit={setPriceLimit} selectedConditions={selectedConditions} setSelectedConditions={setSelectedConditions} selectedSize={selectedSize} setSelectedSize={setSelectedSize} onApply={handleApplyFilters} />
+              </div>
+            </header>
+
+            {matchingListings.length > 0 ? (
+              <div className="grid grid-cols-2 gap-x-6 gap-y-14 md:grid-cols-[repeat(auto-fill,minmax(300px,1fr))] mt-12">
+                {matchingListings.map((item, idx) => (<ListingCard key={item.id} listing={item} onToggleSave={handleToggleSave} index={idx} isMinimal={true} />))}
+              </div>
+            ) : (
+              <div className="py-24">
+                <div className="flex flex-col items-center text-center max-w-2xl mx-auto">
+                  <div className="w-24 h-24 rounded-full bg-zinc-100 flex items-center justify-center mb-8"><Search size={40} className="text-zinc-300" /></div>
+                  <h3 className="text-2xl font-bold text-zinc-900 mb-2 font-inter font-inter font-inter">We couldn't find that.</h3>
+                  <p className="text-zinc-500 max-w-sm mb-10 font-medium font-inter font-inter font-inter">Try searching for broader terms or check our categories for related items.</p>
+                  <div className="flex flex-col sm:flex-row gap-4 mb-24 font-inter">
+                    <button className="px-7 py-3 rounded-full border border-zinc-300 text-sm font-medium text-zinc-800 bg-transparent hover:border-zinc-400 transition-all active:scale-90 flex items-center gap-2 font-inter font-inter"><Bell size={16} /> Notify me when listed</button>
+                    <button onClick={() => { setView('home'); setFilterOpen(false); setActiveCategory(null); }} className="px-7 py-3 rounded-full border border-zinc-300 text-sm font-medium text-zinc-800 bg-transparent hover:border-zinc-400 transition-all active:scale-90 flex items-center gap-2 font-inter font-inter"><Search size={16} /> Browse all items</button>
+                  </div>
+                </div>
+
+                <section className="mt-24 pt-16 border-t border-zinc-200/60">
+                  <header className="mb-12">
+                    <h2 className="text-2xl tracking-tight font-inter">
+                      <span className="font-bold text-zinc-900 font-inter font-inter font-inter">Related items.</span> <span className="text-zinc-500 font-medium font-inter font-inter font-inter">Similar items you might have meant.</span>
+                    </h2>
+                  </header>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-14 md:grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
+                    {infiniteListings.slice(0, 4).map((item, idx) => ( <ListingCard key={`${item.id}-suggestion`} listing={item} onToggleSave={handleToggleSave} index={idx} isMinimal={true} /> ))}
+                  </div>
+                </section>
+              </div>
+            )}
+          </div>
+        )}
+
+        <footer className="bg-[#f5f5f7] border-t border-zinc-200/50 mt-32">
+          <div className="max-w-[1440px] mx-auto px-6 pt-24 pb-24 text-[12px] text-zinc-500">
+            <div className="flex items-center gap-2 pb-6 border-b border-zinc-200 mb-8 text-zinc-400 font-inter">
+              <span className="text-zinc-900 font-bold hover:text-blue-600 transition-colors cursor-pointer font-inter font-inter font-inter" onClick={() => { setView('home'); setFilterOpen(false); setActiveCategory(null); }}>CS</span>
+              <ChevronRightIcon size={12} />
+              <span className="text-zinc-900 font-inter font-inter font-inter">Browse</span>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
+              {[
+                { title: "Shop", links: ["Textbooks", "Electronics", "Clothing", "Kitchen & Dining", "Sports Gear"] },
+                { title: "Account", links: ["Manage Profile", "Saved Items", "Swap History", "Settings"] },
+                { title: "Marketplace", links: ["List an Item", "Bundles", "Verified Swappers", "Safety Guidelines"] },
+                { title: "Help", links: ["FAQ", "Contact Us", "Campus Rules", "Report an Issue"] },
+                { title: "Swap Values", links: ["Sustainability", "Community First", "Student Safety", "Verified Exchanges"] }
+              ].map((group) => (
+                <div key={group.title} className="space-y-2">
+                  <h4 className="text-zinc-900 font-bold font-inter font-inter font-inter">{group.title}</h4>
+                  <ul className="space-y-1 font-inter">{group.links.map(l => <li key={l} className="hover:underline hover:text-zinc-900 cursor-pointer transition-colors font-inter font-inter">{l}</li>)}</ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        </footer>
+      </main>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Source+Code+Pro:wght@400;500;600;700&display=swap');
+        .font-inter { font-family: 'Inter', sans-serif; }
+        .font-mono { font-family: 'Source Code Pro', monospace; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        body { -webkit-font-smoothing: antialiased; background-color: #f5f5f7; }
+        input:focus { outline: none; box-shadow: none; }
+        .animate-pulse-subtle { animation: pulse-subtle 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        @keyframes pulse-subtle { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
+        .reveal-staggered { opacity: 0; transform: translateY(20px); animation: revealFade 0.6s ease forwards; animation-delay: var(--stagger-delay); }
+        @keyframes revealFade { to { opacity: 1; transform: translateY(0); } }
+        input[type="range"] { -webkit-appearance: none; background: transparent; }
+        input[type="range"]::-webkit-slider-runnable-track { width: 100%; height: 4px; background: #e2e2e7; border-radius: 2px; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; height: 20px; width: 20px; border-radius: 50%; background: #000; margin-top: -8px; cursor: pointer; border: 2px solid white; box-shadow: 0 4px 12px rgba(0,0,0,0.15); transition: all 0.2s ease; }
+        input[type="range"]::-webkit-slider-thumb:active { transform: scale(0.9); background: #3b82f6; }
+      `}} />
+    </div>
+  );
+};
+
+export default App;
