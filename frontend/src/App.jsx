@@ -3,6 +3,8 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import Home from './pages/Home'
 import Listings from './pages/Listings'
+import Listing from './pages/Listing'
+import Upload from './pages/Upload'
 import { useAuth } from './context/AuthContext'
 
 function App() {
@@ -22,6 +24,8 @@ function App() {
       <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
       <Route path="/" element={user ? <Home /> : <Navigate to="/login" />} />
       <Route path="/listings" element={<Listings />} />
+      <Route path="/listing" element={<Listing />} />
+      <Route path="/upload" element={<Upload />} />
     </Routes>
   )
 }
