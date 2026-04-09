@@ -28,7 +28,7 @@ import {
 /**
  * CampusSwap - User Profile Page
  * - Identity: Username with '@' prefix; Name and Subject displayed underneath.
- * - Verification: Added a blue verification badge overlapping the main profile picture.
+ * - Verification: Refined badge with a soft grey background and thin blue tick for an Apple aesthetic.
  * - Typography: Title Case headers for "About:" and "Verified Info:".
  * - Actions: Follow toggle and "Message Seller" button in signature Apple Blue.
  * - Listings: Gallery-style cards without redundant avatars or labels.
@@ -107,8 +107,8 @@ const App = () => {
 
       {/* Header */}
       <header className="fixed top-0 w-full z-50 bg-white/85 backdrop-blur-xl border-b border-zinc-200/30">
-        <div className="flex items-center justify-between px-6 py-3 w-full max-w-[1440px] mx-auto relative z-50">
-          <div className="flex items-center gap-8">
+        <div className="flex items-center justify-between px-6 py-3 w-full max-w-[1440px] mx-auto relative z-50 font-inter">
+          <div className="flex items-center gap-8 font-inter">
             <a className="text-xl font-black tracking-tighter text-zinc-900 cursor-pointer" href="#">CS</a>
             <nav className="hidden md:flex items-center gap-6">
               <a className="font-semibold text-sm tracking-tight cursor-pointer text-zinc-400 hover:text-zinc-900 transition-colors">Browse</a>
@@ -120,55 +120,55 @@ const App = () => {
             <div className="relative group">
               <Search size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400" />
               <input 
-                className="w-full h-11 pl-12 pr-4 bg-zinc-100/80 border-none rounded-full text-sm focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-zinc-400 font-inter" 
+                className="w-full h-11 pl-12 pr-4 bg-zinc-100/80 border-none rounded-full text-sm focus:ring-2 focus:ring-blue-100 transition-all placeholder:text-zinc-400 font-inter font-inter" 
                 placeholder="Search campus..." 
                 type="text"
               />
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 font-inter font-inter">
             <div className="flex items-center gap-4 text-zinc-500 font-inter">
-              <button className="p-2 hover:bg-zinc-100/50 rounded-lg transition-all"><Bell size={22} strokeWidth={1.5} /></button>
-              <button className="p-2 hover:bg-zinc-100/50 rounded-lg transition-all"><ShoppingCart size={22} strokeWidth={1.5} /></button>
+              <button className="p-2 hover:bg-zinc-100/50 rounded-lg transition-all font-inter font-inter"><Bell size={22} strokeWidth={1.5} /></button>
+              <button className="p-2 hover:bg-zinc-100/50 rounded-lg transition-all font-inter font-inter"><ShoppingCart size={22} strokeWidth={1.5} /></button>
             </div>
-            <button className="px-5 py-2.5 rounded-lg text-sm font-bold bg-[#0071e3] text-white shadow-sm transition-all hover:bg-[#0077ed]">
+            <button className="px-5 py-2.5 rounded-lg text-sm font-bold bg-[#0071e3] text-white shadow-sm transition-all hover:bg-[#0077ed] font-inter font-inter font-inter">
               Sell <Plus size={16} strokeWidth={2.5} />
             </button>
-            <div className="w-10 h-10 rounded-full overflow-hidden border border-zinc-200 ml-2 cursor-pointer font-inter">
-              <img src={user.avatar} alt="Profile" className="w-full h-full object-cover" />
+            <div className="w-10 h-10 rounded-full overflow-hidden border border-zinc-200 ml-2 cursor-pointer font-inter font-inter">
+              <img src={user.avatar} alt="Profile" className="w-full h-full object-cover font-inter" />
             </div>
           </div>
         </div>
       </header>
 
-      <main className="pt-24 pb-20">
-        <div className="max-w-[1100px] mx-auto px-6 font-inter">
+      <main className="pt-24 pb-20 font-inter">
+        <div className="max-w-[1100px] mx-auto px-6 font-inter font-inter">
           
           {/* Main Profile Header Section */}
-          <section className="pt-12 pb-10 border-b border-zinc-100">
+          <section className="pt-12 pb-10 border-b border-zinc-100 font-inter font-inter font-inter">
             <div className="flex flex-col md:flex-row gap-10 items-start">
               
               {/* Avatar Column with Verification Badge */}
               <div className="flex-shrink-0 relative">
-                <div className="w-40 h-40 rounded-full overflow-hidden border border-zinc-100 shadow-sm font-inter">
-                  <img src={user.avatar} className="w-full h-full object-cover" alt={user.fullName} />
+                <div className="w-40 h-40 rounded-full overflow-hidden border border-zinc-100 shadow-sm relative font-inter">
+                  <img src={user.avatar} className="w-full h-full object-cover font-inter" alt={user.fullName} />
                 </div>
-                {/* Verification Tick Overlapping */}
-                <div className="absolute bottom-1.5 right-1.5 w-9 h-9 bg-[#0071e3] rounded-full border-[4px] border-white shadow-md flex items-center justify-center">
-                   <Check size={18} className="text-white" strokeWidth={3.5} />
+                {/* Refined Verification Badge (Grey bg, Thin blue tick) */}
+                <div className="absolute bottom-1.5 right-1.5 w-9 h-9 bg-zinc-100 rounded-full border-[3px] border-white shadow-sm flex items-center justify-center">
+                   <Check size={18} className="text-[#0071e3]" strokeWidth={2.5} />
                 </div>
               </div>
 
               {/* Information Column */}
-              <div className="flex-1 space-y-5">
-                <div className="flex flex-wrap items-start justify-between gap-4 font-inter">
-                  <div className="space-y-1">
-                    <h1 style={{ fontFamily: appleFontStack }} className="text-2xl font-bold tracking-tight text-zinc-900">
+              <div className="flex-1 space-y-5 font-inter">
+                <div className="flex flex-wrap items-start justify-between gap-4 font-inter font-inter">
+                  <div className="space-y-1 font-inter">
+                    <h1 style={{ fontFamily: appleFontStack }} className="text-2xl font-bold tracking-tight text-zinc-900 font-inter">
                       @{user.username}
                     </h1>
-                    <div className="flex items-center gap-2">
-                       <p className="text-[14px] text-zinc-500 font-medium">
+                    <div className="flex items-center gap-2 font-inter font-inter">
+                       <p className="text-[14px] text-zinc-500 font-medium font-inter">
                          {user.fullName} • {user.subject}
                        </p>
                        <div className="flex items-center gap-1 ml-2">
@@ -180,7 +180,7 @@ const App = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-3 font-inter">
+                  <div className="flex items-center gap-3 font-inter font-inter font-inter">
                     <button 
                       onClick={() => setIsFollowing(!isFollowing)}
                       className={`px-8 py-1.5 rounded-lg text-sm font-bold transition-all border ${
@@ -199,10 +199,10 @@ const App = () => {
 
                 {/* Status Badge Area */}
                 <div className="flex items-center gap-3 font-inter">
-                  <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center font-inter">
+                  <div className="w-9 h-9 rounded-lg bg-blue-50 flex items-center justify-center font-inter font-inter">
                     <Layers size={18} className="text-[#0071e3]" />
                   </div>
-                  <div>
+                  <div className="font-inter">
                     <p className="text-[13.5px] font-bold text-zinc-900 leading-none">Top Swapper</p>
                     <p className="text-[12px] text-zinc-500 font-medium mt-1">Regularly lists 5 or more items per term.</p>
                   </div>
@@ -211,17 +211,17 @@ const App = () => {
                 {/* Information Grid: About vs Verified Info */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-12 gap-y-3 pt-2 font-inter">
                   <div className="space-y-3 font-inter">
-                    <p className="text-[12px] font-medium text-zinc-400">About:</p>
+                    <p className="text-[12px] font-medium text-zinc-400 font-inter">About:</p>
                     <div className="space-y-2.5">
-                      <div className="flex items-center gap-2 text-[13px] text-zinc-600 font-medium">
+                      <div className="flex items-center gap-2 text-[13px] text-zinc-600 font-medium font-inter">
                         <MapPin size={14} className="text-zinc-400" />
                         {user.location}
                       </div>
-                      <div className="flex items-center gap-2 text-[13px] text-zinc-600 font-medium">
+                      <div className="flex items-center gap-2 text-[13px] text-zinc-600 font-medium font-inter">
                         <Clock size={14} className="text-zinc-400" />
                         Last seen {user.lastSeen}
                       </div>
-                      <div className="flex items-center gap-2 text-[13px] text-zinc-600 font-medium">
+                      <div className="flex items-center gap-2 text-[13px] text-zinc-600 font-medium font-inter">
                         <Users size={14} className="text-zinc-400 font-inter" />
                         <span className="text-[#0071e3] font-bold cursor-pointer hover:underline">{user.followers} followers</span>, {user.following} following
                       </div>
@@ -229,13 +229,13 @@ const App = () => {
                   </div>
 
                   <div className="space-y-3 font-inter">
-                    <p className="text-[12px] font-medium text-zinc-400">Verified Info:</p>
+                    <p className="text-[12px] font-medium text-zinc-400 font-inter">Verified Info:</p>
                     <div className="space-y-2.5 font-inter">
-                      <div className="flex items-center gap-2 text-[13px] text-zinc-600 font-medium">
-                        <BadgeCheck size={14} className="text-zinc-400" />
-                        <span className="text-blue-600 font-bold">University ID</span> — {user.university}
+                      <div className="flex items-center gap-2 text-[13px] text-zinc-600 font-medium font-inter font-inter">
+                        <BadgeCheck size={14} className="text-zinc-400 font-inter" />
+                        <span className="text-blue-600 font-bold font-inter">University ID</span> — {user.university}
                       </div>
-                      <div className="flex items-center gap-2 text-[13px] text-zinc-600 font-medium">
+                      <div className="flex items-center gap-2 text-[13px] text-zinc-600 font-medium font-inter">
                         <Check size={14} className="text-zinc-400 font-inter" />
                         Email Address
                       </div>
@@ -244,7 +244,7 @@ const App = () => {
                 </div>
 
                 {/* Bio text */}
-                <div className="pt-4 font-inter">
+                <div className="pt-4 font-inter font-inter">
                   <p className="text-[13.5px] text-zinc-600 leading-relaxed font-medium">
                     {user.bio} <button className="text-[#0071e3] font-normal underline hover:text-blue-700 ml-0.5">see more</button>
                   </p>
@@ -254,7 +254,7 @@ const App = () => {
           </section>
 
           {/* Discovery Tabs Area */}
-          <div className="flex items-center gap-10 mt-2 font-inter">
+          <div className="flex items-center gap-10 mt-2 font-inter font-inter">
              {['listings', 'reviews'].map(tab => (
                 <button 
                   key={tab}
@@ -262,7 +262,7 @@ const App = () => {
                   className={`py-4 text-[14px] font-bold capitalize relative ${activeTab === tab ? 'text-[#0071e3]' : 'text-zinc-400 hover:text-zinc-600'}`}
                 >
                    {tab}
-                   {activeTab === tab && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0071e3] rounded-full font-inter" />}
+                   {activeTab === tab && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0071e3] rounded-full" />}
                 </button>
              ))}
           </div>
@@ -270,25 +270,25 @@ const App = () => {
           {/* Listing Grid / Reviews Content */}
           <section className="pt-12 min-h-[500px] font-inter">
             {activeTab === 'listings' && (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-14 font-inter font-inter">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-14 font-inter font-inter font-inter">
                 {listings.map((item) => {
                   const cStyle = getConditionStyles(item.condition);
                   return (
-                    <div key={item.id} className="group cursor-pointer">
+                    <div key={item.id} className="group cursor-pointer font-inter font-inter">
                       <div className="relative pb-2 overflow-visible font-inter">
-                        <div className="relative overflow-hidden aspect-[4/5] rounded-2xl border border-zinc-100 transition-all font-inter">
-                          <img src={item.img} className="w-full h-full object-cover transition-transform duration-700" alt={item.title} />
+                        <div className="relative overflow-hidden aspect-[4/5] rounded-2xl border border-zinc-100 transition-all font-inter font-inter">
+                          <img src={item.img} className="w-full h-full object-cover transition-transform duration-700 font-inter font-inter" alt={item.title} />
                           
                           <button 
                             onClick={(e) => { e.stopPropagation(); toggleLike(item.id); }}
-                            className="absolute top-4 right-4 px-3 h-9 rounded-full flex items-center gap-2 z-10 bg-white/70 backdrop-blur-md border-white/40 shadow-sm transition-all"
+                            className="absolute top-4 right-4 px-3 h-9 rounded-full flex items-center gap-2 z-10 bg-white/70 backdrop-blur-md border-white/40 shadow-sm transition-all font-inter"
                           >
                             <span className={`text-[12px] font-bold ${item.saved ? 'text-[#FF5A5F]' : 'text-zinc-700'}`}>{item.likes}</span>
-                            <Heart size={17} strokeWidth={2.5} className={item.saved ? 'fill-[#FF5A5F] text-[#FF5A5F]' : 'text-[#FF5A5F] font-inter'} />
+                            <Heart size={17} strokeWidth={2.5} className={item.saved ? 'fill-[#FF5A5F] text-[#FF5A5F]' : 'text-[#FF5A5F]'} />
                           </button>
 
-                          <div className="absolute bottom-4 right-4 flex items-center gap-2 z-10 font-inter">
-                            <span className={`px-4 py-1.5 rounded-full text-[11px] font-bold tracking-tight shadow-sm ${cStyle.bg} ${cStyle.text} font-inter`}>
+                          <div className="absolute bottom-4 right-4 flex items-center gap-2 z-10 font-inter font-inter font-inter">
+                            <span className={`px-4 py-1.5 rounded-full text-[11px] font-bold tracking-tight shadow-sm ${cStyle.bg} ${cStyle.text}`}>
                               {item.condition}
                             </span>
                           </div>
@@ -298,7 +298,7 @@ const App = () => {
                       <div className="mt-1 px-1 font-inter">
                         <div className="flex justify-between items-start gap-2 mb-0.5 font-inter">
                           <h3 className="text-[15px] font-bold leading-[1.2] flex-1 line-clamp-1 font-inter">{item.title}</h3>
-                          <span style={{ fontFamily: appleFontStack }} className="text-[15px] font-bold font-inter">£{item.price}</span>
+                          <span style={{ fontFamily: appleFontStack }} className="text-[15px] font-bold">£{item.price}</span>
                         </div>
                       </div>
                     </div>
@@ -308,24 +308,24 @@ const App = () => {
             )}
 
             {activeTab === 'reviews' && (
-              <div className="max-w-3xl space-y-8 font-inter">
+              <div className="max-w-3xl space-y-8 font-inter font-inter">
                 {[1, 2, 3, 4].map(i => (
                   <div key={i} className="p-8 bg-white border border-zinc-200 rounded-3xl space-y-4 shadow-sm font-inter">
                      <div className="flex items-center justify-between font-inter">
                         <div className="flex items-center gap-4">
-                           <div className="w-10 h-10 rounded-full bg-zinc-100 overflow-hidden font-inter font-inter">
-                              <img src={`https://i.pravatar.cc/150?u=rev${i}`} className="w-full h-full object-cover" alt="Reviewer" />
+                           <div className="w-10 h-10 rounded-full bg-zinc-100 overflow-hidden font-inter">
+                              <img src={`https://i.pravatar.cc/150?u=rev${i}`} className="w-full h-full object-cover font-inter" alt="Reviewer" />
                            </div>
                            <div className="font-inter">
-                              <p className="text-[14px] font-bold font-inter">Alex Thompson</p>
-                              <p className="text-[12px] text-zinc-400 font-medium font-inter">Purchased Vintage Carhartt Beanie</p>
+                              <p className="text-[14px] font-bold">Alex Thompson</p>
+                              <p className="text-[12px] text-zinc-400 font-medium">Purchased Vintage Carhartt Beanie</p>
                            </div>
                         </div>
-                        <div className="flex gap-0.5 font-inter">
-                           {[1, 2, 3, 4, 5].map(s => <Star key={s} size={14} className="fill-orange-400 text-orange-400" />)}
+                        <div className="flex gap-0.5">
+                           {[1, 2, 3, 4, 5].map(s => <Star key={s} size={14} className="fill-orange-400 text-orange-400 font-inter" />)}
                         </div>
                      </div>
-                     <p className="text-[15px] text-zinc-700 leading-relaxed font-medium">
+                     <p className="text-[15px] text-zinc-700 leading-relaxed font-medium font-inter">
                         "Great swapper! Met Maya at the Library Lobby for a pickup. The beanie was exactly as described and practically brand new. Super friendly and responsive."
                      </p>
                      <div className="flex items-center gap-2 pt-2 border-t border-zinc-50 font-inter font-inter font-inter">
@@ -339,21 +339,21 @@ const App = () => {
           </section>
 
           {/* Bottom Breadcrumbs */}
-          <div className="mt-32 pb-8 border-b border-zinc-200/60 font-inter font-inter">
+          <div className="mt-32 pb-8 border-b border-zinc-200/60 font-inter">
             <div className="flex items-center gap-3 text-[13px] text-zinc-400 font-inter">
               <span className="text-zinc-900 font-bold cursor-pointer hover:text-[#0071e3] transition-colors font-inter">CS</span>
-              <ChevronRight size={14} className="text-zinc-300 font-inter" />
-              <span className="text-zinc-900 font-medium cursor-pointer hover:text-[#0071e3] transition-colors font-inter">Profiles</span>
-              <ChevronRight size={14} className="text-zinc-300 font-inter" />
+              <ChevronRight size={14} className="text-zinc-300" />
+              <span className="text-zinc-900 font-medium cursor-pointer hover:text-[#0071e3] transition-colors font-inter font-inter">Profiles</span>
+              <ChevronRight size={14} className="text-zinc-300" />
               <span className="text-zinc-900 font-medium font-inter">{user.fullName}</span>
             </div>
           </div>
         </div>
       </main>
 
-      <footer className="bg-[#f5f5f7] border-t border-zinc-200/50 mt-32 font-inter font-inter font-inter">
+      <footer className="bg-[#f5f5f7] border-t border-zinc-200/50 mt-32 font-inter font-inter">
         <div className="max-w-[1440px] mx-auto px-6 pt-24 pb-24 text-[12px] text-zinc-500 font-inter">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12 font-inter">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8 mb-12 font-inter font-inter font-inter">
             {[
               { title: "Shop", links: ["Textbooks", "Electronics", "Clothing", "Sports Gear"] },
               { title: "Account", links: ["Manage Profile", "Saved Items", "Swap History"] },
@@ -361,10 +361,10 @@ const App = () => {
               { title: "Help", links: ["FAQ", "Contact Us", "Campus Rules"] },
               { title: "Swap Values", links: ["Sustainability", "Community First", "Safety"] }
             ].map((group) => (
-              <div key={group.title} className="space-y-2">
+              <div key={group.title} className="space-y-2 font-inter font-inter font-inter font-inter">
                 <h4 className="text-zinc-900 font-bold font-inter">{group.title}</h4>
-                <ul className="space-y-1 font-inter font-inter font-inter">
-                  {group.links.map(l => <li key={l} className="hover:underline hover:text-zinc-900 cursor-pointer transition-colors font-inter">{l}</li>)}
+                <ul className="space-y-1 font-inter">
+                  {group.links.map(l => <li key={l} className="hover:underline hover:text-zinc-900 cursor-pointer transition-colors font-inter font-inter">{l}</li>)}
                 </ul>
               </div>
             ))}

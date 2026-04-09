@@ -5,6 +5,7 @@ import Home from './pages/Home'
 import Listings from './pages/Listings'
 import Listing from './pages/Listing'
 import Upload from './pages/Upload'
+import Profile from './pages/Profile'
 import { useAuth } from './context/AuthContext'
 
 function App() {
@@ -26,6 +27,7 @@ function App() {
       <Route path="/listings" element={<Listings />} />
       <Route path="/listing" element={<Listing />} />
       <Route path="/upload" element={<Upload />} />
+      <Route path="/profile" element={<Profile />} />
     </Routes>
   )
 }
