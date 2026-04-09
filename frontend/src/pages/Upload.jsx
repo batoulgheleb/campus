@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { 
   Bell, 
   ShoppingCart, 
@@ -14,6 +15,7 @@ import {
   Info,
   Package
 } from 'lucide-react';
+import { listings as listingsApi } from '../api';
 
 /**
  * CampusSwap - Create Listing Page
@@ -81,11 +83,17 @@ const categoryFields = {
 };
 
 const App = () => {
+  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState('Books');
   const [aiPriceLoading, setAiPriceLoading] = useState(true);
   const [suggestedRange, setSuggestedRange] = useState("£45.00 - £62.00");
   const [isPosting, setIsPosting] = useState(false);
   const [bundleChoice, setBundleChoice] = useState(null);
+  const [condition, setCondition] = useState('Like new');
+  const [imageUrl, setImageUrl] = useState('');
+  const [size, setSize] = useState('');
+  const [formError, setFormError] = useState('');
+  const [formSuccess, setFormSuccess] = useState('');
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -105,10 +113,31 @@ const App = () => {
     return () => clearTimeout(timer);
   }, [selectedCategory]);
 
-  const handlePostItem = () => {
-    if (!isFormValid) return;
+  const handlePostItem = async () => {
+    if (!isFormValid || isPosting) return;
     setIsPosting(true);
-    setTimeout(() => setIsPosting(false), 2000);
+    setFormError('');
+    setFormSuccess('');
+    try {
+      const created = await listingsApi.create({
+        title: title.trim(),
+        description: description.trim(),
+        price: Number(price),
+        category: selectedCategory,
+        condition,
+        size: size.trim() || undefined,
+        images: [imageUrl.trim() || "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop"],
+      });
+
+      setFormSuccess('Listing posted successfully.');
+      setTimeout(() => {
+        navigate(`/listing/${created.id}?from=${encodeURIComponent('/browse')}`);
+      }, 300);
+    } catch (error) {
+      setFormError(error.message || 'Failed to post listing.');
+    } finally {
+      setIsPosting(false);
+    }
   };
 
   return (
@@ -117,9 +146,9 @@ const App = () => {
       <header className="fixed top-0 w-full z-50 bg-white/85 backdrop-blur-xl border-b border-zinc-200/30">
         <div className="flex items-center justify-between px-6 py-3 w-full max-w-[1440px] mx-auto relative z-50">
           <div className="flex items-center gap-8">
-            <a className="text-xl font-black tracking-tighter text-zinc-900 cursor-pointer font-inter" href="#">CS</a>
+            <a className="text-xl font-black tracking-tighter text-zinc-900 cursor-pointer font-inter" onClick={() => navigate('/browse')}>CS</a>
             <nav className="hidden md:flex items-center gap-6">
-              <a className="font-semibold text-sm tracking-tight cursor-pointer text-zinc-400 hover:text-zinc-900 transition-colors" href="#">Browse</a>
+              <a className="font-semibold text-sm tracking-tight cursor-pointer text-zinc-400 hover:text-zinc-900 transition-colors" onClick={() => navigate('/browse')}>Browse</a>
               <a className="text-zinc-400 font-medium hover:text-zinc-800 transition-colors text-sm tracking-tight cursor-pointer">Bundles</a>
             </nav>
           </div>
@@ -172,6 +201,15 @@ const App = () => {
                     <Camera size={32} className="text-zinc-300 group-hover:scale-110 group-hover:text-blue-500 transition-all mb-3 font-inter font-inter" />
                     <span className="text-sm font-semibold text-zinc-500 font-inter font-inter">Add primary image</span>
                   </div>
+                  <div className="col-span-4">
+                    <input
+                      value={imageUrl}
+                      onChange={(e) => setImageUrl(e.target.value)}
+                      className="w-full bg-white border border-zinc-200 rounded-xl p-4 text-[15px] focus:ring-2 focus:ring-blue-100 transition-all outline-none font-inter"
+                      placeholder="Primary image URL (optional for now)"
+                      type="url"
+                    />
+                  </div>
                   {[1, 2, 3, 4].map(i => (
                     <div key={i} className="aspect-square bg-white rounded-xl flex items-center justify-center border-2 border-dashed border-zinc-200 hover:border-blue-400 transition-all cursor-pointer group font-inter">
                       <Plus size={20} className="text-zinc-300 group-hover:text-blue-500 transition-colors font-inter" />
@@ -206,6 +244,18 @@ const App = () => {
                       <ChevronDown size={16} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
                     </div>
                   </div>
+                  {(selectedCategory === 'Clothing & Shoes' || selectedCategory === 'Sports Gear') && (
+                    <div>
+                      <label className="block text-sm font-bold text-zinc-900 mb-3 font-inter">Size</label>
+                      <input
+                        value={size}
+                        onChange={(e) => setSize(e.target.value)}
+                        className="w-full bg-white border border-zinc-200 rounded-xl p-4 text-[15px] focus:ring-2 focus:ring-blue-100 transition-all outline-none font-inter"
+                        placeholder="e.g., M, UK 9, OS"
+                        type="text"
+                      />
+                    </div>
+                  )}
                   <div>
                     <label className="block text-sm font-bold text-zinc-900 mb-3 font-inter font-inter font-inter">Detailed description</label>
                     <textarea 
@@ -224,7 +274,11 @@ const App = () => {
                   <div className="flex items-center px-6 py-5">
                     <label className="w-1/3 text-sm font-bold text-zinc-900 font-inter font-inter font-inter">Condition</label>
                     <div className="w-2/3 relative font-inter font-inter">
-                      <select className="w-full bg-transparent border-none p-0 text-[15px] text-zinc-600 focus:ring-0 appearance-none cursor-pointer font-inter">
+                      <select
+                        value={condition}
+                        onChange={(e) => setCondition(e.target.value)}
+                        className="w-full bg-transparent border-none p-0 text-[15px] text-zinc-600 focus:ring-0 appearance-none cursor-pointer font-inter"
+                      >
                         <option>New</option>
                         <option>Like new</option>
                         <option>Very good</option>
@@ -398,6 +452,8 @@ const App = () => {
                 >
                   {isPosting ? 'Posting...' : 'Post item'}
                 </button>
+                {formError && <p className="text-sm text-rose-600 mt-3">{formError}</p>}
+                {formSuccess && <p className="text-sm text-emerald-600 mt-3">{formSuccess}</p>}
                 
                 <div className="text-left mt-8 space-y-4 px-1 font-inter font-inter font-inter font-inter">
                   <p className="text-[11px] text-zinc-400 leading-relaxed font-inter font-inter font-inter font-inter">

@@ -24,8 +24,10 @@ function App() {
       <Route path="/login" element={user ? <Navigate to="/" /> : <Login />} />
       <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
       <Route path="/" element={user ? <Home /> : <Navigate to="/login" />} />
-      <Route path="/listings" element={<Listings />} />
-      <Route path="/listing" element={<Listing />} />
+      <Route path="/listings" element={<Navigate to="/browse" replace />} />
+      <Route path="/browse" element={<Listings />} />
+      <Route path="/listing" element={<Navigate to="/browse" replace />} />
+      <Route path="/listing/:id" element={<Listing />} />
       <Route path="/upload" element={<Upload />} />
       <Route path="/profile" element={<Profile />} />
     </Routes>

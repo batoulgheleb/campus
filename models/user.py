@@ -6,7 +6,7 @@ Each instance of User = one row in the "users" table.
 """
 from datetime import datetime
 from sqlalchemy import String, DateTime, Float, Boolean
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database import Base
 
@@ -71,6 +71,15 @@ class User(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime, 
         default=datetime.utcnow  # Automatically set to current time
+    )
+
+    # Listings this user has posted for sale.
+    listings: Mapped[list["Listing"]] = relationship(back_populates="seller")
+
+    # Listings this user has saved/favorited.
+    saved_listings: Mapped[list["Listing"]] = relationship(
+        secondary="listing_saves",
+        back_populates="saved_by",
     )
 
     def __repr__(self) -> str:

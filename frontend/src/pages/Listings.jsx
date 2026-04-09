@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   Heart, 
   Clock, 
@@ -30,6 +31,7 @@ import {
   SlidersHorizontal,
   ChevronUp
 } from 'lucide-react';
+import { listings as listingsApi } from '../api';
 
 /**
  * CampusSwap - Editorial Marketplace
@@ -40,13 +42,6 @@ import {
  */
 
 // --- STATIC DATA CONFIGURATION ---
-
-const mockListings = [
-  { id: '1', title: "Retro Marshall Speaker — Cream", price: "85", seller: { name: "Jordan Kim", avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80" }, image: "https://images.unsplash.com/photo-1545454675-3531b543be5d?q=80&w=800&auto=format&fit=crop", category: "Electronics", condition: "Like New", saved: false, likes: 24 },
-  { id: '2', title: "Vintage Carhartt Jacket — Moss", price: "65", seller: { name: "Maya Patel", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80" }, image: "https://images.unsplash.com/photo-1551028719-00167b16eac5?q=80&w=800&auto=format&fit=crop", category: "Clothing & Shoes", condition: "Good", size: "L", saved: true, likes: 12 },
-  { id: '3', title: "Organic Chemistry 4th Ed. — Klein", price: "42", seller: { name: "Tyler Brooks", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150&q=80" }, image: "https://images.unsplash.com/photo-1532012197267-da84d127e765?q=80&w=800&auto=format&fit=crop", category: "Books", condition: "Satisfactory", daysLeft: 2, saved: false, likes: 8 },
-  { id: '4', title: "New Balance 550s — White/Grey", price: "75", seller: { name: "Sofia Reyes", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=150&q=80" }, image: "https://images.unsplash.com/photo-1608231387042-66d1773070a5?q=80&w=800&auto=format&fit=crop", category: "Clothing & Shoes", condition: "Brand New", size: "UK 9", saved: false, likes: 42 }
-];
 
 const categories = [
   { icon: <Watch size={16}/>, label: 'Accessories' }, { icon: <Book size={16}/>, label: 'Books' },
@@ -63,21 +58,6 @@ const seasonalSlides = [
 ];
 
 // --- HELPER COMPONENTS ---
-
-const generateMockData = (count, startOffset = 0, category = null) => {
-  const conditions = ["New", "Like New", "Good", "Used"];
-  return Array.from({ length: count }).map((_, i) => ({
-    id: `item-${startOffset + i}-${category || 'all'}`,
-    title: `${category || 'Campus'} Item ${startOffset + i + 1}`,
-    price: Math.floor(Math.random() * 200) + 10,
-    seller: { name: "Student Seller", avatar: `https://i.pravatar.cc/150?u=${startOffset + i}` },
-    image: `https://picsum.photos/seed/${startOffset + i + (category?.length || 0)}/800/1000`,
-    category: category || "General",
-    condition: conditions[Math.floor(Math.random() * conditions.length)],
-    likes: Math.floor(Math.random() * 50),
-    saved: false
-  }));
-};
 
 const LazyImage = ({ src, alt, className, wrapperClassName = "" }) => {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -207,7 +187,7 @@ export function ListingCardSkeleton() {
   );
 }
 
-export function ListingCard({ listing, onToggleSave, className = "", index = 0, isMinimal = false }) {
+export function ListingCard({ listing, onToggleSave, onOpen, className = "", index = 0, isMinimal = false }) {
   const getConditionStyles = (condition) => {
     const c = condition.toLowerCase();
     if (c === 'like new') return { bg: 'bg-[#D1E9FF]', text: 'text-[#1B4B8A]' };
@@ -218,7 +198,11 @@ export function ListingCard({ listing, onToggleSave, className = "", index = 0, 
   const conditionStyle = getConditionStyles(listing.condition);
 
   return (
-    <div className={`cursor-pointer group reveal-staggered ${className}`} style={{ '--stagger-delay': `${index * 50}ms` }}>
+    <div
+      className={`cursor-pointer group reveal-staggered ${className}`}
+      style={{ '--stagger-delay': `${index * 50}ms` }}
+      onClick={() => onOpen?.(listing.id)}
+    >
       <div className="relative pb-4 overflow-visible">
         <div className="relative overflow-hidden aspect-[4/5] rounded-2xl border border-gray-100 transition-shadow duration-300 group-hover:shadow-2xl group-hover:shadow-black/5">
           <LazyImage src={listing.image} alt={listing.title} className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110" wrapperClassName="w-full h-full" />
@@ -234,6 +218,11 @@ export function ListingCard({ listing, onToggleSave, className = "", index = 0, 
             <Heart size={17} strokeWidth={2.5} className={`transition-all duration-300 ${listing.saved ? 'fill-[#FF5A5F] text-[#FF5A5F]' : 'text-[#FF5A5F]'}`} />
           </button>
           <div className="absolute bottom-4 right-4 flex items-center gap-2 z-10 font-inter">
+            {listing.spec_tag && (
+              <span className={`px-3 py-1.5 rounded-full text-[11px] font-bold tracking-tight ${isMinimal ? '' : 'shadow-sm'} bg-white/85 text-zinc-800 border border-white/60`}>
+                {listing.spec_tag}
+              </span>
+            )}
             <span className={`px-4 py-1.5 rounded-full text-[11px] font-bold tracking-tight ${isMinimal ? '' : 'shadow-sm'} ${conditionStyle.bg} ${conditionStyle.text}`}>{listing.condition}</span>
           </div>
         </div>
@@ -255,26 +244,34 @@ export function ListingCard({ listing, onToggleSave, className = "", index = 0, 
 // --- MAIN APPLICATION ---
 
 const App = () => {
-  const [view, setView] = useState('home'); 
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [searchParams, setSearchParams] = useSearchParams();
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || "");
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [recentSearches, setRecentSearches] = useState(["macbook", "vintage jacket", "airpods"]);
   const [matchingListings, setMatchingListings] = useState([]);
   const [infiniteListings, setInfiniteListings] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [totalItems, setTotalItems] = useState(0);
   
   const [categoryListings, setCategoryListings] = useState([]);
-  const [categoryLoading, setCategoryLoading] = useState(false);
+  const [categoryLoading, setCategoryLoading] = useState(true);
   const [categoryHasMore, setCategoryHasMore] = useState(true);
   
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   
   const [filterOpen, setFilterOpen] = useState(false);
-  const [activeCategory, setActiveCategory] = useState(null);
+  const [activeCategory, setActiveCategory] = useState(() => {
+    const urlCategory = searchParams.get('category');
+    if (!urlCategory) return null;
+    const idx = categories.findIndex((cat) => cat.label.toLowerCase() === urlCategory.toLowerCase());
+    return idx >= 0 ? idx : null;
+  });
   const [sortBy, setSortBy] = useState('Newest');
-  const [priceLimit, setPriceLimit] = useState(200);
+  const [priceLimit, setPriceLimit] = useState(Number(searchParams.get('max_price') || 200));
   const [selectedConditions, setSelectedConditions] = useState(['any']);
   const [selectedSize, setSelectedSize] = useState(null);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -284,6 +281,44 @@ const App = () => {
 
   const loaderRef = useRef(null);
   const essentialsScrollRef = useRef(null);
+  const LIMIT = 20;
+  const isSearchView = Boolean(searchParams.get('q'));
+
+  const buildQueryParams = useCallback((offset = 0) => {
+    const q = searchParams.get('q') || undefined;
+    const category = searchParams.get('category') || undefined;
+    const maxPrice = searchParams.get('max_price');
+    const sort = searchParams.get('sort') || 'newest';
+    const conditionFromUrl = searchParams.getAll('condition');
+
+    return {
+      q,
+      category,
+      condition: conditionFromUrl.length > 0 ? conditionFromUrl : undefined,
+      max_price: maxPrice ? Number(maxPrice) : undefined,
+      sort,
+      limit: LIMIT,
+      offset,
+    };
+  }, [searchParams]);
+
+  const updateUrlParams = useCallback((updates) => {
+    const next = new URLSearchParams(searchParams);
+
+    Object.entries(updates).forEach(([key, value]) => {
+      next.delete(key);
+      if (value === undefined || value === null || value === '') return;
+      if (Array.isArray(value)) {
+        value.forEach((entry) => {
+          if (entry !== undefined && entry !== null && entry !== '') next.append(key, String(entry));
+        });
+        return;
+      }
+      next.set(key, String(value));
+    });
+
+    setSearchParams(next);
+  }, [searchParams, setSearchParams]);
 
   // Scroll reset & listener for FAB
   useEffect(() => { 
@@ -295,7 +330,7 @@ const App = () => {
 
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [view, activeCategory]);
+  }, [searchParams, activeCategory]);
 
   const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -310,36 +345,75 @@ const App = () => {
   // Search results filter
   useEffect(() => {
     if (!debouncedQuery) { setMatchingListings([]); return; }
-    const results = [...mockListings, ...infiniteListings]
+    const results = [...infiniteListings]
       .filter(item => item.title.toLowerCase().includes(debouncedQuery.toLowerCase()))
       .slice(0, 12);
     setMatchingListings(results);
   }, [debouncedQuery, infiniteListings]);
 
-  // Category selection handler
+  // Keep local UI state in sync with URL query params.
   useEffect(() => {
-    if (activeCategory !== null) {
-      setCategoryLoading(true);
-      setCategoryHasMore(true);
-      const catLabel = categories[activeCategory].label;
-      setTimeout(() => {
-        setCategoryListings(generateMockData(12, 0, catLabel));
-        setCategoryLoading(false);
-      }, 800);
+    const urlCategory = searchParams.get('category');
+    if (urlCategory) {
+      const idx = categories.findIndex((cat) => cat.label.toLowerCase() === urlCategory.toLowerCase());
+      setActiveCategory(idx >= 0 ? idx : null);
     } else {
-      setCategoryListings([]);
+      setActiveCategory(null);
     }
-  }, [activeCategory]);
+
+    setSearchQuery(searchParams.get('q') || "");
+    setPriceLimit(Number(searchParams.get('max_price') || 200));
+    setSelectedConditions(searchParams.getAll('condition').length > 0 ? searchParams.getAll('condition') : ['any']);
+
+    const sort = searchParams.get('sort');
+    if (sort === 'price_asc') setSortBy('Price: Low-High');
+    else if (sort === 'price_desc') setSortBy('Price: High-Low');
+    else if (sort === 'popularity') setSortBy('Popularity');
+    else setSortBy('Newest');
+  }, [searchParams]);
+
+  const fetchListings = useCallback(async () => {
+    setInitialLoading(true);
+    setCategoryLoading(true);
+    try {
+      const response = await listingsApi.list(buildQueryParams(0));
+      const items = response?.items || [];
+      const total = response?.total || 0;
+      setInfiniteListings(items);
+      setCategoryListings(items);
+      setTotalItems(total);
+      setHasMore(items.length < total);
+      setCategoryHasMore(items.length < total);
+    } catch (error) {
+      console.error('Failed to load listings:', error);
+      setInfiniteListings([]);
+      setCategoryListings([]);
+      setTotalItems(0);
+      setHasMore(false);
+      setCategoryHasMore(false);
+    } finally {
+      setInitialLoading(false);
+      setCategoryLoading(false);
+    }
+  }, [buildQueryParams]);
+
+  useEffect(() => {
+    fetchListings();
+  }, [fetchListings]);
 
   const handleApplyFilters = () => {
-    if (activeCategory !== null) {
-      setCategoryLoading(true);
-      setTimeout(() => setCategoryLoading(false), 600);
-    } else if (view === 'search-results') {
-      const currentMatching = [...matchingListings];
-      setMatchingListings([]);
-      setTimeout(() => setMatchingListings(currentMatching), 500);
-    }
+    const sortMap = {
+      'Newest': 'newest',
+      'Price: Low-High': 'price_asc',
+      'Price: High-Low': 'price_desc',
+      'Popularity': 'popularity',
+    };
+    const normalizedConditions = selectedConditions.includes('any') ? [] : selectedConditions.map((c) => c.replace(/\s+/g, '_'));
+    updateUrlParams({
+      sort: sortMap[sortBy] || 'newest',
+      max_price: priceLimit,
+      condition: normalizedConditions,
+    });
     setFilterOpen(false);
   };
 
@@ -349,55 +423,81 @@ const App = () => {
     setPriceLimit(200);
     setSelectedConditions(['any']);
     setSelectedSize(null);
-    handleApplyFilters();
+    updateUrlParams({
+      sort: undefined,
+      max_price: undefined,
+      condition: [],
+    });
+    setFilterOpen(false);
   };
 
   const handleSearchSubmit = (query) => {
-    if (!query) return;
-    setRecentSearches(prev => [query, ...prev.filter(q => q !== query)].slice(0, 5));
+    const normalized = (query || '').trim();
+    if (!normalized) return;
+    setRecentSearches(prev => [normalized, ...prev.filter(q => q !== normalized)].slice(0, 5));
     setIsSearchFocused(false);
-    setView('search-results');
+    updateUrlParams({ q: normalized });
   };
 
-  const handleToggleSave = (id) => {
-    const updater = prev => prev.map(item => {
-      if (item.id === id) {
+  const handleToggleSave = async (id) => {
+    const targetId = Number(id);
+    const previousInfinite = infiniteListings;
+    const previousMatching = matchingListings;
+    const previousCategory = categoryListings;
+
+    // Optimistic UI update first.
+    const optimisticUpdater = (prev) => prev.map((item) => {
+      if (Number(item.id) === targetId) {
         const isSaving = !item.saved;
         return { ...item, saved: isSaving, likes: isSaving ? item.likes + 1 : Math.max(0, item.likes - 1) };
       }
       return item;
     });
-    setInfiniteListings(updater);
-    setMatchingListings(updater);
-    setCategoryListings(updater);
+
+    setInfiniteListings(optimisticUpdater);
+    setMatchingListings(optimisticUpdater);
+    setCategoryListings(optimisticUpdater);
+
+    try {
+      const response = await listingsApi.toggleSave(targetId);
+      const committedUpdater = (prev) => prev.map((item) => (
+        Number(item.id) === targetId
+          ? { ...item, saved: Boolean(response.saved), likes: response.likes }
+          : item
+      ));
+      setInfiniteListings(committedUpdater);
+      setMatchingListings(committedUpdater);
+      setCategoryListings(committedUpdater);
+    } catch (error) {
+      // Revert optimistic update if API call fails.
+      setInfiniteListings(previousInfinite);
+      setMatchingListings(previousMatching);
+      setCategoryListings(previousCategory);
+      console.error('Failed to toggle favorite:', error);
+    }
   };
 
-  useEffect(() => {
-    const initFetch = async () => {
-      try {
-        await new Promise(r => setTimeout(r, 1000));
-        setInfiniteListings(generateMockData(20, 0));
-      } finally { setInitialLoading(false); }
-    };
-    initFetch();
-  }, []);
-
   const loadMore = useCallback(async () => {
-    if (loadingMore || initialLoading || categoryLoading) return;
+    if (loadingMore || initialLoading || categoryLoading || !hasMore) return;
     setLoadingMore(true);
-    await new Promise(r => setTimeout(r, 1200)); 
-    if (activeCategory !== null) {
-      const catLabel = categories[activeCategory].label;
-      const nextBatch = generateMockData(12, categoryListings.length, catLabel);
-      if (categoryListings.length >= 96) setCategoryHasMore(false);
-      else setCategoryListings(prev => [...prev, ...nextBatch]);
-    } else {
-      const nextBatch = generateMockData(20, infiniteListings.length);
-      if (infiniteListings.length >= 80) setHasMore(false);
-      else setInfiniteListings(prev => [...prev, ...nextBatch]);
+    try {
+      const response = await listingsApi.list(buildQueryParams(infiniteListings.length));
+      const nextBatch = response?.items || [];
+      const total = response?.total || totalItems;
+      setInfiniteListings(prev => [...prev, ...nextBatch]);
+      setCategoryListings(prev => [...prev, ...nextBatch]);
+      setTotalItems(total);
+      const stillMore = infiniteListings.length + nextBatch.length < total;
+      setHasMore(stillMore);
+      setCategoryHasMore(stillMore);
+    } catch (error) {
+      console.error('Failed to load more listings:', error);
+      setHasMore(false);
+      setCategoryHasMore(false);
+    } finally {
+      setLoadingMore(false);
     }
-    setLoadingMore(false);
-  }, [loadingMore, initialLoading, categoryLoading, activeCategory, categoryListings.length, infiniteListings.length]);
+  }, [loadingMore, initialLoading, categoryLoading, hasMore, infiniteListings.length, totalItems, buildQueryParams]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(entries => {
@@ -409,7 +509,7 @@ const App = () => {
     }, { threshold: 0.1 });
     if (loaderRef.current) observer.observe(loaderRef.current);
     return () => observer.disconnect();
-  }, [loadMore, hasMore, categoryHasMore, activeCategory, initialLoading, loadingMore, view]);
+  }, [loadMore, hasMore, categoryHasMore, activeCategory, initialLoading, loadingMore]);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentSlide(p => (p + 1) % 3), 4000);
@@ -424,6 +524,10 @@ const App = () => {
   };
 
   const showEndState = activeCategory !== null ? !categoryHasMore : !hasMore;
+  const openListing = (listingId) => {
+    const from = `${location.pathname}${location.search}`;
+    navigate(`/listing/${listingId}?from=${encodeURIComponent(from)}`);
+  };
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] selection:bg-blue-100 selection:text-blue-700 font-inter scroll-smooth">
@@ -444,9 +548,9 @@ const App = () => {
       <header className="fixed top-0 w-full z-50 bg-white/85 backdrop-blur-xl border-b border-zinc-200/30">
         <div className="flex items-center justify-between px-6 py-3 w-full max-w-[1440px] mx-auto relative z-50">
           <div className="flex items-center gap-8">
-            <a className="text-xl font-black tracking-tighter text-zinc-900 cursor-pointer font-inter font-inter" onClick={() => { setView('home'); setFilterOpen(false); setActiveCategory(null); }}>CS</a>
+            <a className="text-xl font-black tracking-tighter text-zinc-900 cursor-pointer font-inter font-inter" onClick={() => { setFilterOpen(false); setSearchParams(new URLSearchParams()); }}>CS</a>
             <nav className="hidden md:flex items-center gap-6">
-              <a className={`font-semibold text-sm tracking-tight cursor-pointer font-inter ${view === 'home' && activeCategory === null ? 'text-zinc-900' : 'text-zinc-400'}`} onClick={() => { setView('home'); setFilterOpen(false); setActiveCategory(null); }}>Browse</a>
+              <a className={`font-semibold text-sm tracking-tight cursor-pointer font-inter ${!isSearchView && activeCategory === null ? 'text-zinc-900' : 'text-zinc-400'}`} onClick={() => { setFilterOpen(false); setSearchParams(new URLSearchParams()); }}>Browse</a>
               <a className="text-zinc-400 font-medium hover:text-zinc-800 transition-colors text-sm tracking-tight cursor-pointer font-inter">Bundles</a>
             </nav>
           </div>
@@ -500,7 +604,7 @@ const App = () => {
                     <div className="space-y-2">
                       {matchingListings.length > 0 ? (
                         matchingListings.slice(0, 5).map(item => (
-                          <div key={item.id} className="flex items-center gap-4 p-2 rounded-2xl hover:bg-zinc-50 cursor-pointer group transition-colors">
+                          <div key={item.id} className="flex items-center gap-4 p-2 rounded-2xl hover:bg-zinc-50 cursor-pointer group transition-colors" onClick={() => openListing(item.id)}>
                             <div className="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 bg-zinc-100">
                               <img src={item.image} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
                             </div>
@@ -539,7 +643,7 @@ const App = () => {
       </header>
 
       <main className="pt-16">
-        {view === 'home' ? (
+        {!isSearchView ? (
           <>
             <div className="relative">
               <div className="sticky top-16 z-40 bg-white/40 backdrop-blur-md border-b border-zinc-200/40 transition-all duration-300">
@@ -559,7 +663,15 @@ const App = () => {
                   <div className="flex items-center justify-between mb-4"><span className="text-lg font-semibold text-zinc-900 font-inter font-inter">Categories</span></div>
                   <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2 px-1">
                     {categories.map((link, idx) => (
-                      <button key={idx} onClick={() => setActiveCategory(activeCategory === idx ? null : idx)} className={`px-7 py-3 rounded-full border text-sm font-medium transition-all duration-300 whitespace-nowrap flex items-center gap-2 active:scale-90 font-inter ${activeCategory === idx ? 'bg-black border-black text-white shadow-none' : 'bg-transparent border-zinc-300 text-zinc-800'}`}>
+                      <button
+                        key={idx}
+                        onClick={() => {
+                          const nextCategory = activeCategory === idx ? undefined : categories[idx].label;
+                          updateUrlParams({ category: nextCategory, q: undefined });
+                          setFilterOpen(false);
+                        }}
+                        className={`px-7 py-3 rounded-full border text-sm font-medium transition-all duration-300 whitespace-nowrap flex items-center gap-2 active:scale-90 font-inter ${activeCategory === idx ? 'bg-black border-black text-white shadow-none' : 'bg-transparent border-zinc-300 text-zinc-800'}`}
+                      >
                         {link.icon} {link.label}
                       </button>
                     ))}
@@ -591,7 +703,7 @@ const App = () => {
                   <div className="grid grid-cols-2 gap-x-6 gap-y-14 md:grid-cols-[repeat(auto-fill,minmax(300px,1fr))] mt-8">
                     {categoryLoading ? Array.from({ length: 12 }).map((_, i) => <ListingCardSkeleton key={`init-shimmer-${i}`} />) : (
                       <>
-                        {categoryListings.map((item, idx) => ( <ListingCard key={item.id} listing={item} onToggleSave={handleToggleSave} index={idx % 4} isMinimal={true} /> ))}
+                        {categoryListings.map((item, idx) => ( <ListingCard key={item.id} listing={item} onToggleSave={handleToggleSave} onOpen={openListing} index={idx % 4} isMinimal={true} /> ))}
                         {loadingMore && Array.from({ length: 4 }).map((_, i) => <ListingCardSkeleton key={`more-shimmer-${i}`} />)}
                       </>
                     )}
@@ -683,11 +795,11 @@ const App = () => {
                       <div ref={essentialsScrollRef} className="flex overflow-x-auto no-scrollbar gap-6 snap-x snap-mandatory px-1 pb-4">
                         {initialLoading ? (
                           Array.from({ length: 4 }).map((_, i) => (
-                            <div key={`skeleton-ess-${i}`} className="min-w-[280px] md:min-w-[320px]"><ListingCardSkeleton /></div>
+                            <div key={`skeleton-ess-${i}`} className="w-[280px] md:w-[320px] flex-shrink-0"><ListingCardSkeleton /></div>
                           ))
                         ) : (
                           infiniteListings.slice(0, 8).map((item, idx) => (
-                            <ListingCard key={`${item.id}-essentials`} listing={item} onToggleSave={handleToggleSave} index={idx} className="min-w-[280px] md:min-w-[320px] snap-start" />
+                            <ListingCard key={`${item.id}-essentials`} listing={item} onToggleSave={handleToggleSave} onOpen={openListing} index={idx} className="w-[280px] md:w-[320px] flex-shrink-0 snap-start" />
                           ))
                         )}
                       </div>
@@ -700,7 +812,7 @@ const App = () => {
                     <div className="grid grid-cols-2 gap-x-6 gap-y-14 md:grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
                       {initialLoading ? Array.from({ length: 12 }).map((_, i) => <ListingCardSkeleton key={`skeleton-grid-${i}`} />) : (
                         <>
-                          {infiniteListings.map((item, idx) => (<ListingCard key={item.id} listing={item} onToggleSave={handleToggleSave} index={idx % 4} />))}
+                          {infiniteListings.map((item, idx) => (<ListingCard key={item.id} listing={item} onToggleSave={handleToggleSave} onOpen={openListing} index={idx % 4} />))}
                           {loadingMore && Array.from({ length: 4 }).map((_, i) => <ListingCardSkeleton key={`skeleton-more-${i}`} />)}
                         </>
                       )}
@@ -730,11 +842,11 @@ const App = () => {
           <div className="max-w-[1440px] mx-auto px-6 py-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
             <header className="mb-4 flex flex-col gap-6">
               <div className="pt-8 pb-12">
-                <button onClick={() => { setView('home'); setFilterOpen(false); setActiveCategory(null); }} className="text-[11px] font-black uppercase tracking-widest text-blue-600 mb-6 hover:underline block font-mono font-mono">← Back to home</button>
+                <button onClick={() => { setFilterOpen(false); updateUrlParams({ q: undefined, category: undefined, sort: undefined, max_price: undefined, condition: [] }); }} className="text-[11px] font-black uppercase tracking-widest text-blue-600 mb-6 hover:underline block font-mono font-mono">← Back to browse</button>
                 <h2 className="text-5xl md:text-7xl font-bold tracking-tight text-zinc-900 leading-tight font-inter">
-                  Results for <span className="text-zinc-400 font-bold">"{debouncedQuery}"</span>
+                  Results for <span className="text-zinc-400 font-bold">"{searchParams.get('q') || searchQuery}"</span>
                 </h2>
-                <p className="mt-4 text-zinc-500 font-medium font-inter pl-1 font-inter">Found {matchingListings.length} items matching your search.</p>
+                <p className="mt-4 text-zinc-500 font-medium font-inter pl-1 font-inter">Found {totalItems} items matching your search.</p>
               </div>
               
               <div className="border-b border-zinc-200 pb-2">
@@ -752,9 +864,9 @@ const App = () => {
               </div>
             </header>
 
-            {matchingListings.length > 0 ? (
+            {infiniteListings.length > 0 ? (
               <div className="grid grid-cols-2 gap-x-6 gap-y-14 md:grid-cols-[repeat(auto-fill,minmax(300px,1fr))] mt-12">
-                {matchingListings.map((item, idx) => (<ListingCard key={item.id} listing={item} onToggleSave={handleToggleSave} index={idx} isMinimal={true} />))}
+                {infiniteListings.map((item, idx) => (<ListingCard key={item.id} listing={item} onToggleSave={handleToggleSave} onOpen={openListing} index={idx} isMinimal={true} />))}
               </div>
             ) : (
               <div className="py-24">
@@ -764,7 +876,7 @@ const App = () => {
                   <p className="text-zinc-500 max-w-sm mb-10 font-medium font-inter font-inter font-inter">Try searching for broader terms or check our categories for related items.</p>
                   <div className="flex flex-col sm:flex-row gap-4 mb-24 font-inter">
                     <button className="px-7 py-3 rounded-full border border-zinc-300 text-sm font-medium text-zinc-800 bg-transparent hover:border-zinc-400 transition-all active:scale-90 flex items-center gap-2 font-inter font-inter"><Bell size={16} /> Notify me when listed</button>
-                    <button onClick={() => { setView('home'); setFilterOpen(false); setActiveCategory(null); }} className="px-7 py-3 rounded-full border border-zinc-300 text-sm font-medium text-zinc-800 bg-transparent hover:border-zinc-400 transition-all active:scale-90 flex items-center gap-2 font-inter font-inter"><Search size={16} /> Browse all items</button>
+                    <button onClick={() => { setFilterOpen(false); setSearchParams(new URLSearchParams()); }} className="px-7 py-3 rounded-full border border-zinc-300 text-sm font-medium text-zinc-800 bg-transparent hover:border-zinc-400 transition-all active:scale-90 flex items-center gap-2 font-inter font-inter"><Search size={16} /> Browse all items</button>
                   </div>
                 </div>
 
@@ -775,7 +887,7 @@ const App = () => {
                     </h2>
                   </header>
                   <div className="grid grid-cols-2 gap-x-6 gap-y-14 md:grid-cols-[repeat(auto-fill,minmax(300px,1fr))]">
-                    {infiniteListings.slice(0, 4).map((item, idx) => ( <ListingCard key={`${item.id}-suggestion`} listing={item} onToggleSave={handleToggleSave} index={idx} isMinimal={true} /> ))}
+                    {infiniteListings.slice(0, 4).map((item, idx) => ( <ListingCard key={`${item.id}-suggestion`} listing={item} onToggleSave={handleToggleSave} onOpen={openListing} index={idx} isMinimal={true} /> ))}
                   </div>
                 </section>
               </div>
@@ -786,7 +898,7 @@ const App = () => {
         <footer className="bg-[#f5f5f7] border-t border-zinc-200/50 mt-32">
           <div className="max-w-[1440px] mx-auto px-6 pt-24 pb-24 text-[12px] text-zinc-500">
             <div className="flex items-center gap-2 pb-6 border-b border-zinc-200 mb-8 text-zinc-400 font-inter">
-              <span className="text-zinc-900 font-bold hover:text-blue-600 transition-colors cursor-pointer font-inter font-inter font-inter" onClick={() => { setView('home'); setFilterOpen(false); setActiveCategory(null); }}>CS</span>
+              <span className="text-zinc-900 font-bold hover:text-blue-600 transition-colors cursor-pointer font-inter font-inter font-inter" onClick={() => { setFilterOpen(false); setSearchParams(new URLSearchParams()); }}>CS</span>
               <ChevronRightIcon size={12} />
               <span className="text-zinc-900 font-inter font-inter font-inter">Browse</span>
             </div>

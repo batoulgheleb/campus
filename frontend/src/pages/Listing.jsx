@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { 
   Bell, 
   ShoppingCart, 
@@ -25,6 +26,7 @@ import {
   ChevronUp,
   HandCoins
 } from 'lucide-react';
+import { listings as listingsApi } from '../api';
 
 /**
  * CampusSwap - Product Detail with Integrated Discovery
@@ -74,12 +76,19 @@ const ListingCardSkeleton = () => (
 );
 
 const App = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { id } = useParams();
+  const [searchParams] = useSearchParams();
   const [isSaved, setIsSaved] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
+  const [listingData, setListingData] = useState(null);
+  const [detailLoading, setDetailLoading] = useState(true);
+  const [detailError, setDetailError] = useState('');
   
   // Discovery State
   const [isExpanded, setIsExpanded] = useState(false);
-  const [items, setItems] = useState(generateSimilarData(8));
+  const [items, setItems] = useState([]);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -89,27 +98,78 @@ const App = () => {
   
   const observerTarget = useRef(null);
 
-  const listing = {
-    title: "Vintage Carhartt Jacket",
-    price: "65.00",
-    baseLikes: 24,
-    description: "Authentic vintage Detroit jacket in the rare moss green colorway. Beautiful natural fading but no rips or major stains. Quilt-lined for winter warmth. Fits slightly oversized as per vintage specs.",
-    bundleInfo: "Part of a 'Winter Essentials' bundle. Buy together with Carhartt beanie to save 15%.",
+  const listing = listingData ? {
+    title: listingData.title,
+    price: Number(listingData.price || 0).toFixed(2),
+    baseLikes: listingData.likes || 0,
+    description: listingData.description || "",
+    bundleInfo: "Bundle support is coming soon for this listing.",
     seller: {
-      name: "Maya Patel",
-      avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80",
-      rating: 4.9,
-      reviews: 12,
-      university: "University of Warwick"
+      name: listingData.seller?.name || "Student Seller",
+      avatar: listingData.seller?.avatar || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80",
+      rating: listingData.seller?.rating || 0,
+      reviews: 0,
+      university: "Campus student",
     },
-    images: [
-      "https://images.unsplash.com/photo-1551028719-00167b16eac5?q=80&w=1200&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1495105787522-5334e3ffa0ef?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1467043237213-65f2da53396f?q=80&w=800&auto=format&fit=crop",
-      "https://images.unsplash.com/photo-1544441893-675973e31d85?q=80&w=800&auto=format&fit=crop"
-    ],
-    category: "Clothing & Shoes"
+    images: (listingData.images && listingData.images.length > 0)
+      ? listingData.images
+      : ["https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop"],
+    category: listingData.category || "General",
+  } : {
+    title: "Loading listing...",
+    price: "0.00",
+    baseLikes: 0,
+    description: "",
+    bundleInfo: "",
+    seller: {
+      name: "Student Seller",
+      avatar: "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=150&q=80",
+      rating: 0,
+      reviews: 0,
+      university: "Campus student",
+    },
+    images: ["https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop"],
+    category: "General",
   };
+
+  const backTarget = searchParams.get('from') || '/browse';
+
+  useEffect(() => {
+    if (!id) {
+      navigate('/browse', { replace: true });
+    }
+  }, [id, navigate]);
+
+  useEffect(() => {
+    const fetchListingData = async () => {
+      if (!id) return;
+      setDetailLoading(true);
+      setDetailError('');
+      try {
+        const [detail, similar] = await Promise.all([
+          listingsApi.get(id),
+          listingsApi.similar(id, 8),
+        ]);
+        setListingData(detail);
+        setIsSaved(Boolean(detail.saved));
+        setItems((similar?.items || []).map((item) => ({
+          id: item.id,
+          title: item.title,
+          price: Number(item.price || 0).toFixed(0),
+          likes: item.likes || 0,
+          saved: Boolean(item.saved),
+          condition: item.condition || "Used",
+          img: item.image || "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop",
+        })));
+        setHasMore(Boolean((similar?.items || []).length >= 8));
+      } catch (error) {
+        setDetailError(error.message || 'Failed to load listing.');
+      } finally {
+        setDetailLoading(false);
+      }
+    };
+    fetchListingData();
+  }, [id]);
 
   useEffect(() => {
     const handleScroll = () => setShowBackToTop(window.scrollY > 400);
@@ -132,23 +192,27 @@ const App = () => {
   const handleViewAll = () => {
     if (isExpanded) return;
     setIsExpanded(true);
-    setIsInitialLoading(true);
-    setTimeout(() => {
-      setItems(generateSimilarData(12));
-      setIsInitialLoading(false);
-    }, 1000);
   };
 
   const loadMoreItems = useCallback(() => {
-    if (isLoadingMore || items.length >= 40 || !isExpanded) return;
+    if (isLoadingMore || !isExpanded || !id) return;
     setIsLoadingMore(true);
-    setTimeout(() => {
-      const nextBatch = generateSimilarData(8, items.length);
-      setItems(prev => [...prev, ...nextBatch]);
-      setIsLoadingMore(false);
-      if (items.length + 8 >= 40) setHasMore(false);
-    }, 800);
-  }, [isLoadingMore, items.length, isExpanded]);
+    listingsApi.similar(id, Math.min(items.length + 8, 40))
+      .then((response) => {
+        const nextItems = (response?.items || []).map((item) => ({
+          id: item.id,
+          title: item.title,
+          price: Number(item.price || 0).toFixed(0),
+          likes: item.likes || 0,
+          saved: Boolean(item.saved),
+          condition: item.condition || "Used",
+          img: item.image || "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop",
+        }));
+        setItems(nextItems);
+        setHasMore(nextItems.length < 40 && nextItems.length >= items.length + 8);
+      })
+      .finally(() => setIsLoadingMore(false));
+  }, [isLoadingMore, isExpanded, id, items.length]);
 
   useEffect(() => {
     if (!isExpanded) return;
@@ -170,7 +234,43 @@ const App = () => {
     }));
   };
 
+  const toggleSavedForCurrentListing = async () => {
+    if (!id) return;
+    try {
+      const response = await listingsApi.toggleSave(id);
+      setIsSaved(Boolean(response.saved));
+      setListingData((prev) => prev ? { ...prev, likes: response.likes } : prev);
+    } catch (error) {
+      console.error('Failed to toggle save state:', error);
+    }
+  };
+
   const appleFontStack = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", sans-serif';
+
+  if (detailLoading) {
+    return (
+      <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center">
+        <div className="text-zinc-500 font-medium">Loading listing...</div>
+      </div>
+    );
+  }
+
+  if (detailError) {
+    return (
+      <div className="min-h-screen bg-[#f5f5f7] flex items-center justify-center px-6">
+        <div className="text-center">
+          <p className="text-zinc-900 font-semibold mb-2">Could not load listing</p>
+          <p className="text-zinc-500 text-sm mb-6">{detailError}</p>
+          <button
+            className="px-5 py-2 rounded-lg bg-zinc-900 text-white text-sm"
+            onClick={() => navigate('/browse')}
+          >
+            Back to browse
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] selection:bg-blue-100 selection:text-blue-700 font-inter">
@@ -187,9 +287,9 @@ const App = () => {
       <header className="fixed top-0 w-full z-50 bg-white/85 backdrop-blur-xl border-b border-zinc-200/30">
         <div className="flex items-center justify-between px-6 py-3 w-full max-w-[1440px] mx-auto relative z-50">
           <div className="flex items-center gap-8 font-inter font-inter">
-            <a className="text-xl font-black tracking-tighter text-zinc-900 cursor-pointer font-inter" href="#">CS</a>
+            <a className="text-xl font-black tracking-tighter text-zinc-900 cursor-pointer font-inter" onClick={() => navigate('/browse')}>CS</a>
             <nav className="hidden md:flex items-center gap-6">
-              <a className="font-semibold text-sm tracking-tight cursor-pointer text-zinc-400 hover:text-zinc-900 transition-colors font-inter">Browse</a>
+              <a className="font-semibold text-sm tracking-tight cursor-pointer text-zinc-400 hover:text-zinc-900 transition-colors font-inter" onClick={() => navigate('/browse')}>Browse</a>
               <a className="text-zinc-400 font-medium hover:text-zinc-800 transition-colors text-sm tracking-tight cursor-pointer font-inter">Bundles</a>
             </nav>
           </div>
@@ -226,14 +326,14 @@ const App = () => {
           {/* Utility Bar */}
           <div className="flex items-center justify-between py-5 border-b border-zinc-200/50 mb-8 font-inter font-inter font-inter font-inter">
              <div className="flex items-center gap-4 text-[13px] font-medium text-zinc-400 font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter">
-                <button className="flex items-center gap-1.5 hover:text-zinc-900 transition-colors">
+                <button className="flex items-center gap-1.5 hover:text-zinc-900 transition-colors" onClick={() => navigate(backTarget)}>
                    <ChevronLeft size={16} /> Back to Browse
                 </button>
                 <span className="text-zinc-200 font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter">|</span>
                 <span className="font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter">Listed in {listing.category}</span>
              </div>
              <div className="flex items-center gap-6 font-inter font-inter">
-                <button onClick={() => setIsSaved(!isSaved)} className="flex items-center gap-2 text-[13px] font-medium text-zinc-400 hover:text-zinc-900 transition-colors font-inter font-inter font-inter font-inter">
+                <button onClick={toggleSavedForCurrentListing} className="flex items-center gap-2 text-[13px] font-medium text-zinc-400 hover:text-zinc-900 transition-colors font-inter font-inter font-inter font-inter">
                    <Heart size={16} className={isSaved ? "fill-rose-500 text-rose-500 font-inter font-inter font-inter" : "font-inter font-inter font-inter font-inter"} /> {isSaved ? 'Saved' : 'Save'}
                 </button>
                 <button className="flex items-center gap-2 text-[13px] font-medium text-zinc-400 hover:text-zinc-900 transition-colors font-inter font-inter font-inter font-inter font-inter font-inter">
@@ -267,7 +367,7 @@ const App = () => {
                     <button 
                       onClick={(e) => {
                         e.stopPropagation();
-                        setIsSaved(!isSaved);
+                        toggleSavedForCurrentListing();
                       }}
                       className="bg-white/90 backdrop-blur-sm px-3.5 py-2.5 rounded-full shadow-md flex items-center gap-2.5 hover:bg-white transition-all active:scale-95 border border-zinc-200/50 font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter"
                     >
@@ -483,7 +583,11 @@ const App = () => {
                   {items.map((item, idx) => {
                      const cStyle = getConditionStyles(item.condition);
                      return (
-                        <div key={item.id} className={`${isExpanded ? 'animate-in fade-in duration-500' : 'min-w-[240px] md:min-w-[280px] snap-start'} group cursor-pointer font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter`}>
+                        <div
+                          key={item.id}
+                          className={`${isExpanded ? 'animate-in fade-in duration-500' : 'min-w-[240px] md:min-w-[280px] snap-start'} group cursor-pointer font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter`}
+                          onClick={() => navigate(`/listing/${item.id}?from=${encodeURIComponent(backTarget || `${location.pathname}${location.search}`)}`)}
+                        >
                            <div className="relative pb-4 overflow-visible font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter">
                               <div className="relative overflow-hidden aspect-[4/5] rounded-2xl border border-gray-100 transition-all group-hover:shadow-2xl font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter">
                                  <img src={item.img} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110 font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter" alt={item.title} />

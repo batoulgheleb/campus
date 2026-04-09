@@ -90,4 +90,61 @@ export const auth = {
   },
 }
 
-export default { auth }
+// Listings API calls
+export const listings = {
+  async list(params = {}) {
+    const searchParams = new URLSearchParams()
+
+    Object.entries(params).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === '') return
+      if (Array.isArray(value)) {
+        value.forEach((item) => {
+          if (item !== undefined && item !== null && item !== '') {
+            searchParams.append(key, String(item))
+          }
+        })
+        return
+      }
+      searchParams.append(key, String(value))
+    })
+
+    const query = searchParams.toString()
+    return request(`/listings${query ? `?${query}` : ''}`)
+  },
+
+  async get(id) {
+    return request(`/listings/${id}`)
+  },
+
+  async create(payload) {
+    return request('/listings', {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  async update(id, payload) {
+    return request(`/listings/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    })
+  },
+
+  async remove(id) {
+    return request(`/listings/${id}`, {
+      method: 'DELETE',
+    })
+  },
+
+  async toggleSave(id) {
+    return request(`/listings/${id}/save`, {
+      method: 'POST',
+    })
+  },
+
+  async similar(id, limit = 12) {
+    return request(`/listings/${id}/similar?limit=${limit}`)
+  },
+}
+
+export default { auth, listings }

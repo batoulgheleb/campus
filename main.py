@@ -5,8 +5,9 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
 from database import engine, Base
-from models import User  # Import models so they're registered with Base
+from models import User, Listing, ListingSave  # Import models so they're registered with Base
 from routes.auth import router as auth_router
+from routes.listings import router as listings_router
 
 
 @asynccontextmanager
@@ -52,6 +53,7 @@ app.add_middleware(
 
 # Mount routers - this adds all the /auth/* routes
 app.include_router(auth_router)
+app.include_router(listings_router)
 
 
 @app.get("/")
