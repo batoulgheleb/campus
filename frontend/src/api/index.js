@@ -145,6 +145,22 @@ export const listings = {
   async similar(id, limit = 12) {
     return request(`/listings/${id}/similar?limit=${limit}`)
   },
+
+  async mine(params = {}) {
+    const searchParams = new URLSearchParams()
+    Object.entries(params).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === '') return
+      searchParams.append(key, String(value))
+    })
+    const query = searchParams.toString()
+    return request(`/listings/mine${query ? `?${query}` : ''}`)
+  },
+
+  async markSold(id) {
+    return request(`/listings/${id}/mark-sold`, {
+      method: 'POST',
+    })
+  },
 }
 
 export default { auth, listings }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { 
   Bell, 
   ShoppingCart, 
@@ -84,6 +84,8 @@ const categoryFields = {
 
 const App = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const editingId = searchParams.get('edit');
   const [selectedCategory, setSelectedCategory] = useState('Books');
   const [aiPriceLoading, setAiPriceLoading] = useState(true);
   const [suggestedRange, setSuggestedRange] = useState("£45.00 - £62.00");
@@ -94,6 +96,7 @@ const App = () => {
   const [size, setSize] = useState('');
   const [formError, setFormError] = useState('');
   const [formSuccess, setFormSuccess] = useState('');
+  const [loadingEditData, setLoadingEditData] = useState(false);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -113,13 +116,36 @@ const App = () => {
     return () => clearTimeout(timer);
   }, [selectedCategory]);
 
+  useEffect(() => {
+    const loadEditListing = async () => {
+      if (!editingId) return;
+      setLoadingEditData(true);
+      setFormError('');
+      try {
+        const listing = await listingsApi.get(editingId);
+        setTitle(listing.title || '');
+        setDescription(listing.description || '');
+        setPrice(String(listing.price ?? ''));
+        setSelectedCategory(listing.category || 'Books');
+        setCondition(listing.condition || 'Like new');
+        setSize(listing.size || '');
+        setImageUrl(listing.images?.[0] || '');
+      } catch (error) {
+        setFormError(error.message || 'Failed to load listing for edit.');
+      } finally {
+        setLoadingEditData(false);
+      }
+    };
+    loadEditListing();
+  }, [editingId]);
+
   const handlePostItem = async () => {
-    if (!isFormValid || isPosting) return;
+    if (!isFormValid || isPosting || loadingEditData) return;
     setIsPosting(true);
     setFormError('');
     setFormSuccess('');
     try {
-      const created = await listingsApi.create({
+      const payload = {
         title: title.trim(),
         description: description.trim(),
         price: Number(price),
@@ -127,14 +153,18 @@ const App = () => {
         condition,
         size: size.trim() || undefined,
         images: [imageUrl.trim() || "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=1200&auto=format&fit=crop"],
-      });
+      };
 
-      setFormSuccess('Listing posted successfully.');
+      const result = editingId
+        ? await listingsApi.update(editingId, payload)
+        : await listingsApi.create(payload);
+
+      setFormSuccess(editingId ? 'Listing updated successfully.' : 'Listing posted successfully.');
       setTimeout(() => {
-        navigate(`/listing/${created.id}?from=${encodeURIComponent('/browse')}`);
+        navigate(`/listing/${result.id}?from=${encodeURIComponent('/browse')}`);
       }, 300);
     } catch (error) {
-      setFormError(error.message || 'Failed to post listing.');
+      setFormError(error.message || (editingId ? 'Failed to update listing.' : 'Failed to post listing.'));
     } finally {
       setIsPosting(false);
     }
@@ -184,7 +214,7 @@ const App = () => {
         <div className="max-w-5xl mx-auto px-6">
           
           <div className="mb-16 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-zinc-900 leading-tight mb-4 font-inter font-inter">List Your Item</h1>
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-zinc-900 leading-tight mb-4 font-inter font-inter">{editingId ? 'Edit Listing' : 'List Your Item'}</h1>
             <p className="text-base text-zinc-500 font-medium max-w-2xl leading-relaxed font-inter font-inter font-inter">
               Create a high-fidelity listing for the student community. Quality photos and detailed info attract the best offers.
             </p>
@@ -443,14 +473,14 @@ const App = () => {
               <div className="pt-4 font-inter">
                 <button 
                   onClick={handlePostItem}
-                  disabled={!isFormValid || isPosting}
+                  disabled={!isFormValid || isPosting || loadingEditData}
                   className={`w-full py-4 rounded-2xl text-[15px] font-medium text-white transition-all transform active:scale-95 flex items-center justify-center font-inter font-inter font-inter
                     ${isFormValid 
                       ? 'bg-[#0071e3] hover:bg-[#0077ed]' 
                       : 'bg-[#9CBDEA]/60 cursor-not-allowed'}
                     ${isPosting ? 'opacity-60 scale-[0.98]' : ''}`}
                 >
-                  {isPosting ? 'Posting...' : 'Post item'}
+                  {loadingEditData ? 'Loading listing...' : isPosting ? (editingId ? 'Saving...' : 'Posting...') : (editingId ? 'Save changes' : 'Post item')}
                 </button>
                 {formError && <p className="text-sm text-rose-600 mt-3">{formError}</p>}
                 {formSuccess && <p className="text-sm text-emerald-600 mt-3">{formSuccess}</p>}

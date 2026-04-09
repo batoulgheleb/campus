@@ -6,6 +6,7 @@ import Listings from './pages/Listings'
 import Listing from './pages/Listing'
 import Upload from './pages/Upload'
 import Profile from './pages/Profile'
+import PersonalProfile from './pages/Personal_Profile'
 import { useAuth } from './context/AuthContext'
 
 function App() {
@@ -30,6 +31,7 @@ function App() {
       <Route path="/listing/:id" element={<Listing />} />
       <Route path="/upload" element={<Upload />} />
       <Route path="/profile" element={<Profile />} />
+      <Route path="/me" element={<PersonalProfile />} />
     </Routes>
   )
 }

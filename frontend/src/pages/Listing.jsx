@@ -574,18 +574,18 @@ const App = () => {
                )}
             </div>
             
-            {isInitialLoading ? (
-               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-6 gap-y-14 font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter">
-                  {Array.from({ length: 10 }).map((_, i) => <ListingCardSkeleton key={i} />)}
-               </div>
-            ) : (
-               <div className={`${isExpanded ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-6 gap-y-14' : 'flex gap-6 overflow-x-auto pb-12 snap-x no-scrollbar'} transition-all duration-500 font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter`}>
-                  {items.map((item, idx) => {
+             {isInitialLoading ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-6 gap-y-14 font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter">
+                   {Array.from({ length: 10 }).map((_, i) => <ListingCardSkeleton key={i} />)}
+                </div>
+             ) : (
+                <div className={`${isExpanded ? 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-6 gap-y-14' : 'grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-6 gap-y-14'} transition-all duration-500 font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter`}>
+                   {items.map((item, idx) => {
                      const cStyle = getConditionStyles(item.condition);
                      return (
                         <div
                           key={item.id}
-                          className={`${isExpanded ? 'animate-in fade-in duration-500' : 'min-w-[240px] md:min-w-[280px] snap-start'} group cursor-pointer font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter`}
+                          className={`${isExpanded ? 'animate-in fade-in duration-500' : ''} group cursor-pointer font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter`}
                           onClick={() => navigate(`/listing/${item.id}?from=${encodeURIComponent(backTarget || `${location.pathname}${location.search}`)}`)}
                         >
                            <div className="relative pb-4 overflow-visible font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter font-inter">

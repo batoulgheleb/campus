@@ -53,6 +53,7 @@ class ListingCardResponse(BaseModel):
     seller: SellerSummary
     likes: int
     saved: bool
+    sold: bool = False
     created_at: datetime
 
 

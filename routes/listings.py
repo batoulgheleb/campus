@@ -83,6 +83,7 @@ async def _to_card_response(
         seller=_to_seller_summary(listing.seller),
         likes=listing.likes,
         saved=saved,
+        sold=not listing.is_active,
         created_at=listing.created_at,
     )
 
@@ -186,6 +187,36 @@ async def get_listing(
         created_at=listing.created_at,
         updated_at=listing.updated_at,
     )
+
+
+@router.get("/mine", response_model=ListingListResponse)
+async def list_my_listings(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
+) -> ListingListResponse:
+    base_query = (
+        select(Listing)
+        .where(Listing.seller_id == current_user.id)
+        .options(selectinload(Listing.seller))
+        .order_by(Listing.created_at.desc())
+        .limit(limit)
+        .offset(offset)
+    )
+    count_query = select(func.count(Listing.id)).where(Listing.seller_id == current_user.id)
+
+    listings_result = await db.execute(base_query)
+    listings = listings_result.scalars().all()
+
+    total_result = await db.execute(count_query)
+    total = total_result.scalar_one()
+
+    items: list[ListingCardResponse] = []
+    for listing in listings:
+        items.append(await _to_card_response(db, listing, current_user))
+
+    return ListingListResponse(items=items, total=total, limit=limit, offset=offset)
 
 
 @router.post("", response_model=ListingDetailResponse, status_code=status.HTTP_201_CREATED)
@@ -298,6 +329,49 @@ async def delete_listing(
     listing.is_active = False
     await db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.post("/{listing_id}/mark-sold", response_model=ListingDetailResponse)
+async def mark_listing_as_sold(
+    listing_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> ListingDetailResponse:
+    result = await db.execute(
+        select(Listing)
+        .where(Listing.id == listing_id)
+        .options(selectinload(Listing.seller))
+    )
+    listing = result.scalar_one_or_none()
+    if listing is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Listing not found")
+
+    if listing.seller_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not your listing")
+
+    listing.is_active = False
+    await db.commit()
+    await db.refresh(listing)
+
+    saved = await _is_saved(db, current_user.id, listing.id)
+    return ListingDetailResponse(
+        id=listing.id,
+        title=listing.title,
+        description=listing.description,
+        price=listing.price,
+        category=listing.category,
+        condition=listing.condition,
+        images=listing.images,
+        size=listing.size,
+        color=listing.color,
+        location=listing.location,
+        seller=_to_seller_summary(listing.seller),
+        likes=listing.likes,
+        saved=saved,
+        is_active=listing.is_active,
+        created_at=listing.created_at,
+        updated_at=listing.updated_at,
+    )
 
 
 @router.post("/{listing_id}/save", response_model=SaveListingResponse)
