@@ -601,36 +601,73 @@ const App = () => {
                 <>
                   <section className="mb-24 mt-12">
                     <header className="mb-8"><h2 className="text-2xl tracking-tight font-inter font-inter"><span className="font-bold text-zinc-900">The Latest.</span> <span className="text-zinc-500 font-medium">Fresh arrivals from across campus.</span></h2></header>
-                    <div className="flex flex-col md:flex-row gap-4 pb-8">
-                      <div className="flex-shrink-0 w-full md:w-[64%] aspect-[16/10] rounded-3xl bg-zinc-900 overflow-hidden relative border border-zinc-800 shadow-2xl shadow-black/10 group cursor-pointer">
+                    
+                    <div className="flex overflow-x-auto no-scrollbar gap-6 snap-x snap-mandatory pb-8 px-1">
+                      {/* 1. MacBook Air M1 */}
+                      <div className="flex-shrink-0 w-[85vw] md:w-[55vw] max-w-[750px] aspect-[4/3] rounded-3xl bg-zinc-900 overflow-hidden relative border border-zinc-800 shadow-2xl shadow-black/10 group cursor-pointer snap-start">
                         <LazyImage src="https://images.unsplash.com/photo-1517336714731-489689fd1ca8?q=80&w=1200" alt="MacBook" className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105" wrapperClassName="w-full h-full" />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-transparent" />
-                        <div className="absolute bottom-0 p-10 text-white z-10 font-inter">
+                        <div className="absolute bottom-0 p-8 md:p-10 text-white z-10 font-inter">
                           <span className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-400 mb-2 block font-mono">LATEST DROP</span>
-                          <h3 className="text-3xl font-bold leading-tight">MacBook Air M1</h3>
-                          <p className="text-zinc-100 mt-1 text-base font-medium">Includes original box and charger.</p>
-                          <div className="mt-6"><button className="bg-white text-black px-6 py-2.5 rounded-full text-[11px] font-black uppercase tracking-widest transition-all hover:bg-zinc-100 active:scale-95 font-inter">View Deal</button></div>
+                          <h3 className="text-3xl md:text-5xl font-bold leading-tight">MacBook Air M1</h3>
+                          <p className="text-zinc-100 mt-2 text-base md:text-lg font-medium">Includes original box and charger.</p>
+                          <div className="mt-6 md:mt-8"><button className="bg-white text-black px-6 py-2.5 rounded-full text-[11px] md:text-[13px] font-black uppercase tracking-widest transition-all hover:bg-zinc-100 active:scale-95 font-inter">View Deal</button></div>
                         </div>
                       </div>
-                      <div className="flex-1 flex flex-col gap-4">
-                        <div className="flex-1 aspect-[16/9] rounded-3xl bg-white border border-zinc-200 overflow-hidden relative flex flex-col group shadow-xl shadow-black/5">
-                          {seasonalSlides.map((slide, i) => (
-                            <img key={slide.tag} src={slide.image} className={`absolute inset-0 w-full h-full object-cover transition-all duration-1000 ${currentSlide === i ? 'opacity-100 scale-100' : 'opacity-0 scale-110'}`} loading="lazy" />
-                          ))}
-                          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/40 to-transparent z-0" />
-                          <div className="flex-1 p-8 flex flex-row items-center gap-4 relative z-10">
-                            <div className={`w-16 h-16 rounded-2xl ${seasonalSlides[currentSlide].bgColor} flex items-center justify-center border border-white/50 shadow-sm backdrop-blur-sm animate-in zoom-in duration-500`} key={`icon-${currentSlide}`}><Sparkles className={seasonalSlides[currentSlide].color} size={32} /></div>
-                            <div className="text-left flex-1 animate-in slide-in-from-left-4 duration-500" key={`text-${currentSlide}`}>
-                              <span className={`text-[11px] font-black uppercase tracking-[0.3em] mb-1 block font-mono ${seasonalSlides[currentSlide].color}`}>{seasonalSlides[currentSlide].tag}</span>
-                              <h3 className="text-xl font-bold text-zinc-900 leading-tight font-inter"> {seasonalSlides[currentSlide].title}</h3>
-                              <p className="text-zinc-700 font-medium text-[12px] mt-1 font-inter">{seasonalSlides[currentSlide].desc}</p>
+
+                      {/* 2. Vintage Levi Jeans Image */}
+                      <div className="flex-shrink-0 w-[85vw] md:w-[55vw] max-w-[750px] aspect-[4/3] rounded-3xl overflow-hidden relative shadow-xl shadow-black/5 border border-zinc-200 snap-start">
+                        <img 
+                          src="image_9ee839.jpg" 
+                          alt="Vintage Levi Jeans Search" 
+                          className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
+                          onError={(e) => {
+                            e.target.onerror = null;
+                            e.target.src = "https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=800&auto=format&fit=crop";
+                          }}
+                        />
+                        {/* Exposure reduction overlay - Lightened so the image is clearly visible */}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
+                        
+                        {/* Search Bar Overlay */}
+                        <div className="absolute bottom-[20%] left-4 md:left-10 right-4 md:right-auto flex">
+                          <div className="w-full md:w-[480px] lg:w-[540px] h-[52px] rounded-full border border-white/70 bg-transparent flex items-center pl-5 pr-1.5 gap-3 pointer-events-none">
+                            <Search size={18} className="text-white drop-shadow-md" strokeWidth={2} />
+                            <div className="flex-1 text-white text-[15px] font-medium font-inter text-left truncate drop-shadow-md">
+                              Vintage Levi Jeans near me
+                            </div>
+                            <div className="bg-[#dcdce0] text-zinc-900 px-6 md:px-8 h-[40px] rounded-full text-[14px] font-medium font-inter flex items-center justify-center shadow-sm">
+                              search
                             </div>
                           </div>
-                          <div className="absolute bottom-6 left-8 flex gap-1.5 z-10">{seasonalSlides.map((_, i) => (<div key={i} className={`h-1 rounded-full transition-all duration-500 ${currentSlide === i ? 'w-5 bg-zinc-900' : 'w-1.5 bg-zinc-300'}`} />))}</div>
                         </div>
-                        <div className="flex-1 aspect-[16/9] rounded-3xl bg-[#F0F2FF] border border-blue-100 overflow-hidden relative flex flex-col group cursor-pointer hover:border-blue-300 transition-colors">
-                          <div className="flex-1 p-8 flex flex-row items-center gap-4"><div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center border border-blue-100 shadow-sm transition-transform group-hover:scale-105"><Package className="text-blue-600" size={32} /></div><div className="text-left font-inter"><span className="text-[11px] font-black uppercase tracking-[0.3em] text-blue-700 mb-1 block font-mono">BUNDLE DEAL</span><h3 className="text-xl font-bold text-zinc-900 leading-tight">Dorm Starter Kit</h3><p className="text-blue-700 font-bold text-[12px] mt-1">4 items · £65 · Save 30%</p></div></div>
-                          <div className="px-8 pb-6 flex items-center justify-between"><span className="text-xs font-bold text-zinc-500 font-inter">Limited time university promo</span><button className="text-blue-600 p-1.5 bg-white rounded-full shadow-sm hover:scale-110 transition-transform"><ChevronRightIcon size={20}/></button></div>
+                      </div>
+
+                      {/* 3. Dorm Starter Kit */}
+                      <div className="flex-shrink-0 w-[85vw] md:w-[55vw] max-w-[750px] aspect-[4/3] rounded-3xl bg-zinc-900 border border-zinc-800 overflow-hidden relative flex flex-col justify-between group cursor-pointer shadow-xl shadow-black/10 snap-start">
+                        <LazyImage 
+                          src="https://images.unsplash.com/photo-1555854877-bab0e564b8d5?q=80&w=1200" 
+                          alt="Dorm Room" 
+                          className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105 opacity-90" 
+                          wrapperClassName="absolute inset-0 w-full h-full" 
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/20 z-0" />
+                        
+                        <div className="p-8 md:p-10 flex-1 flex flex-col justify-center items-start gap-6 relative z-10">
+                          <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl md:rounded-3xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20 shadow-sm transition-transform group-hover:scale-105">
+                            <Package className="text-white w-8 h-8 md:w-10 md:h-10" />
+                          </div>
+                          <div className="text-left font-inter">
+                            <span className="text-[11px] md:text-[13px] font-black uppercase tracking-[0.3em] text-blue-400 mb-2 md:mb-3 block font-mono">BUNDLE DEAL</span>
+                            <h3 className="text-3xl md:text-5xl font-bold text-white leading-tight">Dorm Starter Kit</h3>
+                            <p className="text-blue-200 font-bold text-[15px] md:text-lg mt-2">4 items · £65 · Save 30%</p>
+                          </div>
+                        </div>
+                        <div className="px-8 pb-8 md:px-10 md:pb-10 flex items-center justify-between mt-auto relative z-10">
+                          <span className="text-xs md:text-sm font-bold text-zinc-300 font-inter">Limited time university promo</span>
+                          <button className="text-zinc-900 p-2 md:p-3 bg-white rounded-full shadow-sm hover:scale-110 transition-transform">
+                            <ChevronRightIcon size={24} />
+                          </button>
                         </div>
                       </div>
                     </div>

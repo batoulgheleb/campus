@@ -66,14 +66,14 @@ const App = () => {
   };
 
   const [listings, setListings] = useState([
-    { id: 1, title: "Vintage Carhartt Jacket", price: "65", likes: 24, saved: false, condition: "Like New", img: "https://images.unsplash.com/photo-1551028719-00167b16eac5?q=80&w=800" },
-    { id: 2, title: "North Face Puffer", price: "120", likes: 82, saved: true, condition: "Good", img: "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?q=80&w=800" },
-    { id: 3, title: "Levi's 501 Jeans", price: "35", likes: 12, saved: false, condition: "Used", img: "https://images.unsplash.com/photo-1542272604-787c3835535d?q=80&w=800" },
-    { id: 4, title: "Graphic Tee", price: "15", likes: 45, saved: false, condition: "New", img: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=800" },
-    { id: 5, title: "Wool Cardigan", price: "28", likes: 19, saved: false, condition: "Used", img: "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?q=80&w=800" },
-    { id: 6, title: "Varsity Jacket", price: "55", likes: 67, saved: false, condition: "Like New", img: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=800" },
-    { id: 7, title: "Checkered Shirt", price: "22", likes: 8, saved: false, condition: "Used", img: "https://images.unsplash.com/photo-1598411037848-9cda955883a2?q=80&w=800" },
-    { id: 8, title: "Beanie Hat", price: "12", likes: 54, saved: false, condition: "New", img: "https://images.unsplash.com/photo-1576871333021-d6426aa558ee?q=80&w=800" }
+    { id: 1, title: "Vintage Carhartt Jacket", price: "65", likes: 24, saved: false, condition: "Like New", size: "L", img: "https://images.unsplash.com/photo-1551028719-00167b16eac5?q=80&w=800" },
+    { id: 2, title: "North Face Puffer", price: "120", likes: 82, saved: true, condition: "Good", size: "M", img: "https://images.unsplash.com/photo-1551488831-00ddcb6c6bd3?q=80&w=800" },
+    { id: 3, title: "Levi's 501 Jeans", price: "35", likes: 12, saved: false, condition: "Used", size: "W32 L30", img: "https://images.unsplash.com/photo-1542272604-787c3835535d?q=80&w=800" },
+    { id: 4, title: "Graphic Tee", price: "15", likes: 45, saved: false, condition: "New", size: "XL", img: "https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?q=80&w=800" },
+    { id: 5, title: "Wool Cardigan", price: "28", likes: 19, saved: false, condition: "Used", size: "S", img: "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?q=80&w=800" },
+    { id: 6, title: "Varsity Jacket", price: "55", likes: 67, saved: false, condition: "Like New", size: "M", img: "https://images.unsplash.com/photo-1614613535308-eb5fbd3d2c17?q=80&w=800" },
+    { id: 7, title: "Checkered Shirt", price: "22", likes: 8, saved: false, condition: "Used", size: "L", img: "https://images.unsplash.com/photo-1598411037848-9cda955883a2?q=80&w=800" },
+    { id: 8, title: "Beanie Hat", price: "12", likes: 54, saved: false, condition: "New", size: "OS", img: "https://images.unsplash.com/photo-1576871333021-d6426aa558ee?q=80&w=800" }
   ]);
 
   useEffect(() => {
@@ -95,7 +95,7 @@ const App = () => {
   const appleFontStack = '-apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", sans-serif';
 
   return (
-    <div className="min-h-screen bg-white text-[#1d1d1f] selection:bg-blue-100 selection:text-blue-700 font-inter">
+    <div className="min-h-screen bg-[#f5f5f7] text-[#1d1d1f] selection:bg-blue-100 selection:text-blue-700">
       
       {/* Back to Top */}
       <button 
@@ -183,7 +183,7 @@ const App = () => {
                   <div className="flex items-center gap-3 font-inter font-inter font-inter">
                     <button 
                       onClick={() => setIsFollowing(!isFollowing)}
-                      className={`px-8 py-1.5 rounded-lg text-sm font-bold transition-all border ${
+                      className={`px-8 py-1.5 lg:px-6 lg:py-1 rounded-lg lg:rounded-md text-sm font-bold transition-all border ${
                         isFollowing 
                           ? 'bg-[#0071e3] text-white border-[#0071e3]' 
                           : 'bg-transparent text-[#0071e3] border-[#0071e3]'
@@ -191,7 +191,7 @@ const App = () => {
                     >
                       {isFollowing ? 'Followed' : 'Follow'}
                     </button>
-                    <button className="px-6 py-1.5 bg-transparent text-[#0071e3] border border-[#0071e3] rounded-lg text-sm font-bold transition-all">
+                    <button className="px-6 py-1.5 lg:px-4 lg:py-1 bg-transparent text-[#0071e3] border border-[#0071e3] rounded-lg lg:rounded-md text-sm font-bold transition-all">
                       Message Seller
                     </button>
                   </div>
@@ -254,17 +254,22 @@ const App = () => {
           </section>
 
           {/* Discovery Tabs Area */}
-          <div className="flex items-center gap-10 mt-2 font-inter font-inter">
-             {['listings', 'reviews'].map(tab => (
-                <button 
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`py-4 text-[14px] font-bold capitalize relative ${activeTab === tab ? 'text-[#0071e3]' : 'text-zinc-400 hover:text-zinc-600'}`}
-                >
-                   {tab}
-                   {activeTab === tab && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-[#0071e3] rounded-full" />}
-                </button>
-             ))}
+          <div className="flex items-center mt-6 mb-2">
+            <div className="bg-zinc-200/60 p-1 lg:p-0.5 rounded-xl lg:rounded-lg inline-flex relative w-full sm:w-auto">
+               {['listings', 'reviews'].map(tab => (
+                  <button 
+                    key={tab}
+                    onClick={() => setActiveTab(tab)}
+                    className={`relative z-10 py-1.5 px-8 lg:py-1 lg:px-6 text-[14px] font-semibold capitalize rounded-lg lg:rounded-md transition-all duration-300 flex-1 sm:flex-none ${
+                      activeTab === tab 
+                        ? 'bg-white text-zinc-900 shadow-sm' 
+                        : 'text-zinc-500 hover:text-zinc-700'
+                    }`}
+                  >
+                     {tab}
+                  </button>
+               ))}
+            </div>
           </div>
 
           {/* Listing Grid / Reviews Content */}
@@ -274,20 +279,25 @@ const App = () => {
                 {listings.map((item) => {
                   const cStyle = getConditionStyles(item.condition);
                   return (
-                    <div key={item.id} className="group cursor-pointer font-inter font-inter">
-                      <div className="relative pb-2 overflow-visible font-inter">
-                        <div className="relative overflow-hidden aspect-[4/5] rounded-2xl border border-zinc-100 transition-all font-inter font-inter">
-                          <img src={item.img} className="w-full h-full object-cover transition-transform duration-700 font-inter font-inter" alt={item.title} />
+                    <div key={item.id} className="group cursor-pointer transition-all duration-300">
+                      <div className="relative pb-2 overflow-visible">
+                        <div className="relative overflow-hidden aspect-[4/5] rounded-2xl border border-gray-100 transition-shadow duration-300 group-hover:shadow-2xl group-hover:shadow-black/5">
+                          <img src={item.img} className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110" alt={item.title} />
                           
                           <button 
                             onClick={(e) => { e.stopPropagation(); toggleLike(item.id); }}
-                            className="absolute top-4 right-4 px-3 h-9 rounded-full flex items-center gap-2 z-10 bg-white/70 backdrop-blur-md border-white/40 shadow-sm transition-all font-inter"
+                            className="absolute top-4 right-4 px-3 h-9 rounded-full flex items-center gap-2 z-10 transition-all duration-300 hover:scale-105 active:scale-95 border bg-white/70 backdrop-blur-md border-white/40 shadow-sm"
                           >
-                            <span className={`text-[12px] font-bold ${item.saved ? 'text-[#FF5A5F]' : 'text-zinc-700'}`}>{item.likes}</span>
-                            <Heart size={17} strokeWidth={2.5} className={item.saved ? 'fill-[#FF5A5F] text-[#FF5A5F]' : 'text-[#FF5A5F]'} />
+                            <span className={`text-[12px] font-bold transition-colors duration-300 ${item.saved ? 'text-[#FF5A5F]' : 'text-zinc-700'}`}>{item.likes}</span>
+                            <Heart size={17} strokeWidth={2.5} className={`transition-all duration-300 ${item.saved ? 'fill-[#FF5A5F] text-[#FF5A5F]' : 'text-[#FF5A5F]'}`} />
                           </button>
 
-                          <div className="absolute bottom-4 right-4 flex items-center gap-2 z-10 font-inter font-inter font-inter">
+                          <div className="absolute bottom-4 right-4 flex items-center gap-2 z-10">
+                            {item.size && (
+                              <span className="px-3 py-1.5 rounded-full bg-white/90 backdrop-blur-sm text-zinc-800 text-[11px] font-bold tracking-tight shadow-sm uppercase">
+                                {item.size}
+                              </span>
+                            )}
                             <span className={`px-4 py-1.5 rounded-full text-[11px] font-bold tracking-tight shadow-sm ${cStyle.bg} ${cStyle.text}`}>
                               {item.condition}
                             </span>
@@ -295,10 +305,10 @@ const App = () => {
                         </div>
                       </div>
 
-                      <div className="mt-1 px-1 font-inter">
-                        <div className="flex justify-between items-start gap-2 mb-0.5 font-inter">
-                          <h3 className="text-[15px] font-bold leading-[1.2] flex-1 line-clamp-1 font-inter">{item.title}</h3>
-                          <span style={{ fontFamily: appleFontStack }} className="text-[15px] font-bold">£{item.price}</span>
+                      <div className="mt-1 px-1">
+                        <div className="flex items-start justify-between gap-2">
+                          <p className="text-[15px] font-bold leading-[1.2] flex-1 line-clamp-1 pt-0.5">{item.title}</p>
+                          <span className="text-[15px] font-bold">£{item.price}</span>
                         </div>
                       </div>
                     </div>
@@ -308,32 +318,118 @@ const App = () => {
             )}
 
             {activeTab === 'reviews' && (
-              <div className="max-w-3xl space-y-8 font-inter font-inter">
-                {[1, 2, 3, 4].map(i => (
-                  <div key={i} className="p-8 bg-white border border-zinc-200 rounded-3xl space-y-4 shadow-sm font-inter">
-                     <div className="flex items-center justify-between font-inter">
-                        <div className="flex items-center gap-4">
-                           <div className="w-10 h-10 rounded-full bg-zinc-100 overflow-hidden font-inter">
-                              <img src={`https://i.pravatar.cc/150?u=rev${i}`} className="w-full h-full object-cover font-inter" alt="Reviewer" />
-                           </div>
-                           <div className="font-inter">
-                              <p className="text-[14px] font-bold">Alex Thompson</p>
-                              <p className="text-[12px] text-zinc-400 font-medium">Purchased Vintage Carhartt Beanie</p>
-                           </div>
-                        </div>
-                        <div className="flex gap-0.5">
-                           {[1, 2, 3, 4, 5].map(s => <Star key={s} size={14} className="fill-orange-400 text-orange-400 font-inter" />)}
-                        </div>
-                     </div>
-                     <p className="text-[15px] text-zinc-700 leading-relaxed font-medium font-inter">
-                        "Great swapper! Met Maya at the Library Lobby for a pickup. The beanie was exactly as described and practically brand new. Super friendly and responsive."
-                     </p>
-                     <div className="flex items-center gap-2 pt-2 border-t border-zinc-50 font-inter font-inter font-inter">
-                        <ShieldCheck size={14} className="text-green-600 font-inter" />
-                        <span className="text-[12px] font-bold text-zinc-400 uppercase tracking-widest font-inter">Verified Transaction</span>
-                     </div>
+              <div className="max-w-3xl">
+                {/* Rating Overview */}
+                <div className="flex flex-col md:flex-row gap-8 items-start mb-8 pb-8 border-b border-zinc-200/60">
+                  {/* Big Score */}
+                  <div className="flex items-center gap-5 min-w-[200px]">
+                    <span style={{ fontFamily: appleFontStack }} className="text-6xl font-semibold text-zinc-900 tracking-tight">4.9</span>
+                    <div className="flex flex-col items-start">
+                      <div className="flex gap-1 mb-1.5">
+                        {[1, 2, 3, 4, 5].map(s => <Star key={s} size={16} className="fill-orange-400 text-orange-400" />)}
+                      </div>
+                      <span className="text-[13px] text-zinc-500 font-medium">126 reviews</span>
+                    </div>
                   </div>
-                ))}
+
+                  {/* Breakdown Bars */}
+                  <div className="flex-1 w-full space-y-2.5 md:pt-1">
+                    {[
+                      { s: 5, p: 85 },
+                      { s: 4, p: 12 },
+                      { s: 3, p: 3 },
+                      { s: 2, p: 0 },
+                      { s: 1, p: 0 }
+                    ].map(bar => (
+                      <div key={bar.s} className="flex items-center gap-3">
+                        <span className="text-[13px] font-bold text-zinc-900 w-2 text-right">{bar.s}</span>
+                        <div className="flex-1 h-2.5 rounded-full bg-zinc-200 overflow-hidden">
+                          <div className="h-full bg-[#0071e3] rounded-full" style={{ width: `${bar.p}%` }} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Filters & Keyword Pills */}
+                <div className="flex flex-wrap gap-2.5 mb-8">
+                  {[
+                    { label: "All Reviews", active: true },
+                    { label: "Verified Only", count: 46 },
+                    { label: "With Photos", count: 25 },
+                    { label: "Great Seller", count: 78 },
+                    { label: "Speedy Delivery", count: 21 },
+                    { label: "Item as Described", count: 9 }
+                  ].map((pill, i) => (
+                    <button key={i} className={`px-4 py-1.5 rounded-full border text-[13px] font-semibold transition-colors ${pill.active ? 'border-[#0071e3] text-[#0071e3] bg-blue-50/50' : 'border-zinc-200 text-zinc-600 hover:border-zinc-300'}`}>
+                      {pill.label} {pill.count && <span className="text-zinc-400 ml-1 font-medium">{pill.count}</span>}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Review List */}
+                <div className="space-y-0">
+                  {[
+                    { 
+                      id: 1, 
+                      name: "William S.", 
+                      date: "12 days ago", 
+                      verified: true, 
+                      text: "Looks are awesome. Traction is unbelievable. I normally wear 11.5 but purchased 12.0. Fits perfectly, support under arch is just as I like. My only quibble is the tightness across the forefoot. If I were in my playing years, I would definitely have 2 or 3 pairs in rotation.", 
+                      rating: 4.8 
+                    },
+                    { 
+                      id: 2, 
+                      name: "James K.", 
+                      date: "1 month ago", 
+                      verified: true, 
+                      text: "These felt stiff and narrow when I went true to size. The insole feels undersized. When stepping with them it’s like the inner ankle is stepping over it if that makes sense, almost rubbing uncomfortably.", 
+                      rating: 3.5 
+                    },
+                    { 
+                      id: 3, 
+                      name: "Elena R.", 
+                      date: "2 months ago", 
+                      verified: true, 
+                      text: "Maya was great to swap with! The Carhartt jacket was exactly as described and practically brand new. She was super friendly and responsive to messages. Met up at the library lobby, zero hassle.", 
+                      rating: 5.0 
+                    }
+                  ].map((rev) => (
+                    <div key={rev.id} className="py-8 border-b border-zinc-200/60 last:border-0">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-11 h-11 rounded-full bg-zinc-100 overflow-hidden">
+                            <img src={`https://i.pravatar.cc/150?u=rev${rev.id}`} className="w-full h-full object-cover" alt={rev.name} />
+                          </div>
+                          <div>
+                            <p className="text-[15px] font-bold text-zinc-900">{rev.name}</p>
+                            <p className="text-[13px] text-zinc-500 font-medium mt-0.5">{rev.date}</p>
+                          </div>
+                        </div>
+                        {rev.verified && (
+                          <span className="px-2.5 py-0.5 rounded-full border border-emerald-500 text-emerald-600 text-[11px] font-bold tracking-wide">
+                            Verified
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[15px] text-zinc-800 leading-relaxed font-medium mb-4">
+                        {rev.text}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        <div className="flex gap-0.5">
+                          {[1, 2, 3, 4, 5].map(s => (
+                            <Star 
+                              key={s} 
+                              size={15} 
+                              className={s <= Math.floor(rev.rating) ? "fill-orange-400 text-orange-400" : "fill-zinc-200 text-zinc-200"} 
+                            />
+                          ))}
+                        </div>
+                        <span className="text-[13px] font-bold text-zinc-700">{rev.rating.toFixed(1)} stars</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </section>
@@ -373,9 +469,11 @@ const App = () => {
       </footer>
 
       <style dangerouslySetInnerHTML={{ __html: `
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Source+Code+Pro:wght@400;500;600;700&display=swap');
-        .font-inter { font-family: 'Inter', sans-serif; }
-        body { -webkit-font-smoothing: antialiased; background-color: #ffffff; }
+        body { 
+          font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Helvetica Neue", sans-serif;
+          -webkit-font-smoothing: antialiased; 
+          background-color: #f5f5f7; 
+        }
         input:focus { outline: none; box-shadow: none; }
       `}} />
     </div>
