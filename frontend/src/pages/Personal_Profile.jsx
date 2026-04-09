@@ -78,6 +78,7 @@ const App = () => {
 
   const [listings, setListings] = useState([]);
   const profileStorageKey = authUser ? `studentswap.profile.${authUser.id}` : null;
+  const fallbackAvatar = 'https://ui-avatars.com/api/?name=Profile&background=e4e4e7&color=52525b';
 
   const mapListing = (item) => ({
     id: item.id,
@@ -114,7 +115,7 @@ const App = () => {
       username: authUser.username,
       fullName: authUser.username,
       subject: "Student",
-      avatar: authUser.avatar_url || "https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?auto=format&fit=crop&w=300&q=80",
+      avatar: authUser.avatar_url || fallbackAvatar,
       university: authUser.university,
       joined: "Recently joined",
       location: "Campus",
@@ -140,8 +141,14 @@ const App = () => {
     }
 
     const merged = persistedProfile ? { ...baseProfile, ...persistedProfile } : baseProfile;
-    setUser(merged);
-    setEditForm(merged);
+    setUser({
+      ...merged,
+      avatar: merged.avatar || fallbackAvatar,
+    });
+    setEditForm({
+      ...merged,
+      avatar: merged.avatar || fallbackAvatar,
+    });
   }, [authUser, profileStorageKey]);
 
   const loadMyListings = async () => {
@@ -263,7 +270,12 @@ const App = () => {
               Sell <Plus size={16} strokeWidth={2.5} />
             </button>
             <div className="w-10 h-10 rounded-full overflow-hidden border border-zinc-200 ml-2 cursor-pointer font-inter font-inter">
-              <img src={user.avatar} alt="Profile" className="w-full h-full object-cover font-inter" />
+              <img
+                src={user.avatar || fallbackAvatar}
+                alt="Profile"
+                className="w-full h-full object-cover font-inter"
+                onError={(e) => { e.currentTarget.src = fallbackAvatar; }}
+              />
             </div>
           </div>
         </div>
@@ -279,7 +291,12 @@ const App = () => {
               {/* Avatar Column with Verification Badge */}
               <div className="flex-shrink-0 relative">
                 <div className="w-40 h-40 rounded-full overflow-hidden border border-zinc-100 shadow-sm relative font-inter group">
-                  <img src={isEditing ? editForm.avatar : user.avatar} className="w-full h-full object-cover font-inter transition-all duration-300" alt={user.fullName} />
+                  <img
+                    src={(isEditing ? editForm.avatar : user.avatar) || fallbackAvatar}
+                    className="w-full h-full object-cover font-inter transition-all duration-300"
+                    alt={user.fullName}
+                    onError={(e) => { e.currentTarget.src = fallbackAvatar; }}
+                  />
                   {isEditing && (
                     <div className="absolute inset-0 bg-black/40 flex items-center justify-center cursor-pointer hover:bg-black/50 transition-colors">
                       <Camera size={28} className="text-white drop-shadow-md" />

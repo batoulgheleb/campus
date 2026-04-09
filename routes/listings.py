@@ -189,7 +189,7 @@ async def get_listing(
     )
 
 
-@router.get("/mine", response_model=ListingListResponse)
+@router.get("/my-listings", response_model=ListingListResponse)
 async def list_my_listings(
     db: Annotated[AsyncSession, Depends(get_db)],
     current_user: Annotated[User, Depends(get_current_user)],

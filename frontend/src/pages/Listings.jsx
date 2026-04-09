@@ -227,7 +227,14 @@ export function ListingCard({ listing, onToggleSave, onOpen, className = "", ind
           </div>
         </div>
         <div className="absolute bottom-0 left-5 w-14 h-14 rounded-full border-[3px] border-white overflow-hidden bg-gray-100 z-20 shadow-lg group-hover:-translate-y-1 transition-transform duration-300">
-          <img src={listing.seller.avatar} alt={listing.seller.name} className="w-full h-full object-cover" />
+          <img
+            src={listing.seller.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(listing.seller.name || 'Seller')}&background=e4e4e7&color=52525b`}
+            alt={listing.seller.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(listing.seller.name || 'Seller')}&background=e4e4e7&color=52525b`;
+            }}
+          />
         </div>
       </div>
       <div className="mt-1 px-1 transition-transform duration-300 group-hover:translate-x-0.5">

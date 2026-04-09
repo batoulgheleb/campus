@@ -153,7 +153,7 @@ export const listings = {
       searchParams.append(key, String(value))
     })
     const query = searchParams.toString()
-    return request(`/listings/mine${query ? `?${query}` : ''}`)
+    return request(`/listings/my-listings${query ? `?${query}` : ''}`)
   },
 
   async markSold(id) {

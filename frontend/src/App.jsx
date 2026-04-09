@@ -31,7 +31,7 @@ function App() {
       <Route path="/listing/:id" element={<Listing />} />
       <Route path="/upload" element={<Upload />} />
       <Route path="/profile" element={<Profile />} />
-      <Route path="/me" element={<PersonalProfile />} />
+      <Route path="/me" element={user ? <PersonalProfile /> : <Navigate to="/login" />} />
     </Routes>
   )
 }
